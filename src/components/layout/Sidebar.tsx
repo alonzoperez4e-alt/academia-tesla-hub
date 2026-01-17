@@ -151,7 +151,7 @@ export const Sidebar = ({ role, activeItem, onItemClick, userName, userCode, use
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full bg-sidebar flex flex-col z-50 transition-all duration-300",
+          "fixed lg:sticky left-0 top-0 h-full bg-sidebar flex flex-col z-50 transition-all duration-300 lg:h-screen",
           // Desktop
           isCollapsed ? "lg:w-20" : "lg:w-64",
           // Mobile
@@ -160,9 +160,6 @@ export const Sidebar = ({ role, activeItem, onItemClick, userName, userCode, use
       >
         <SidebarContent />
       </aside>
-
-      {/* Spacer for main content */}
-      <div className={cn("hidden lg:block transition-all duration-300", isCollapsed ? "w-20" : "w-64")} />
     </>
   );
 };

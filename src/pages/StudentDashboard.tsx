@@ -117,7 +117,7 @@ const StudentDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-secondary flex">
+    <div className="flex min-h-screen bg-secondary">
       <Sidebar
         role="student"
         activeItem={activeItem}
@@ -127,7 +127,7 @@ const StudentDashboard = () => {
         userArea={user.area}
       />
 
-      <div className="flex-1 lg:ml-0">
+      <div className="flex-1 w-full transition-all duration-300">
         <Header 
           userName={user.name.split(" ")[0]} 
           userArea={user.area}

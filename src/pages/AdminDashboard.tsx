@@ -85,7 +85,7 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-secondary flex">
+    <div className="flex min-h-screen bg-secondary">
       <Sidebar
         role="admin"
         activeItem={activeItem}
@@ -94,7 +94,7 @@ const AdminDashboard = () => {
         userCode={user.code}
       />
 
-      <div className="flex-1 lg:ml-0">
+      <div className="flex-1 w-full transition-all duration-300">
         <Header 
           userName={user.name.split(" ")[0]} 
           showSearch={activeItem === "material"}

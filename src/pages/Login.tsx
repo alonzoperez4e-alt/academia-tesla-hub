@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import logo from "@/elements/526536997_1332296692230643_53059892068269174_n.jpg";
+
 // Mock users database with roles
 const mockUsers = [
   { code: "ALU001", password: "123456", role: "alumno", name: "Carlos Rodríguez", area: "Ingeniería" },
@@ -62,8 +64,8 @@ const Login = () => {
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12">
           <div className="text-center animate-fade-in">
             {/* Logo */}
-            <div className="w-24 h-24 bg-accent rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
-              <Zap className="w-14 h-14 text-primary" />
+            <div className="w-48 h-48 bg-transparent flex items-center justify-center mx-auto mb-8">
+              <img src={logo} alt="Tesla Logo" className="w-full h-full object-contain" />
             </div>
             
             <h1 className="text-4xl font-bold text-primary-foreground mb-2">
@@ -94,8 +96,8 @@ const Login = () => {
         <div className="w-full max-w-md animate-slide-up">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
-            <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-10 h-10 text-accent" />
+            <div className="w-32 h-32 flex items-center justify-center mx-auto mb-4">
+              <img src={logo} alt="Tesla Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-primary">Academia TESLA</h1>
           </div>
