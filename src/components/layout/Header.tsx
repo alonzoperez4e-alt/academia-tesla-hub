@@ -5,14 +5,16 @@ interface HeaderProps {
   userName: string;
   userArea?: string;
   showSearch?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
-export const Header = ({ userName, userArea, showSearch = true }: HeaderProps) => {
+export const Header = ({ userName, userArea, showSearch = true, searchValue = "", onSearchChange }: HeaderProps) => {
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
-      <div className="flex items-center gap-4">
+    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
+      <div className="flex items-center gap-4 ml-12 lg:ml-0">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">
+          <h2 className="text-lg lg:text-xl font-semibold text-foreground">
             Hola, <span className="text-primary">{userName}</span>
           </h2>
           {userArea && (
@@ -23,13 +25,15 @@ export const Header = ({ userName, userArea, showSearch = true }: HeaderProps) =
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 lg:gap-4">
         {showSearch && (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar cursos, materiales..."
-              className="pl-10 w-64 input-tesla"
+              placeholder="Buscar..."
+              value={searchValue}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              className="pl-10 w-32 sm:w-48 lg:w-64 input-tesla"
             />
           </div>
         )}

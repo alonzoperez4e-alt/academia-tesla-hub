@@ -1,33 +1,50 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Zap, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Zap, User, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
-type Role = "alumno" | "admin";
+// Mock users database with roles
+const mockUsers = [
+  { code: "ALU001", password: "123456", role: "alumno", name: "Carlos Rodríguez", area: "Ingeniería" },
+  { code: "ALU002", password: "123456", role: "alumno", name: "María López", area: "Medicina" },
+  { code: "ADM001", password: "admin123", role: "admin", name: "Dr. María García", area: undefined },
+];
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [userCode, setUserCode] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("alumno");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     
     // Simulate login
     await new Promise((resolve) => setTimeout(resolve, 1000));
     
-    if (role === "alumno") {
-      navigate("/dashboard");
+    const user = mockUsers.find(
+      (u) => u.code.toLowerCase() === userCode.toLowerCase() && u.password === password
+    );
+    
+    if (user) {
+      // Store user data in sessionStorage for the session
+      sessionStorage.setItem("currentUser", JSON.stringify(user));
+      
+      if (user.role === "alumno") {
+        navigate("/dashboard");
+      } else {
+        navigate("/admin");
+      }
     } else {
-      navigate("/admin");
+      setError("Código de usuario o contraseña incorrectos");
     }
+    
     setIsLoading(false);
   };
 
@@ -88,48 +105,28 @@ const Login = () => {
               ¡Bienvenido de vuelta!
             </h2>
             <p className="text-muted-foreground">
-              Ingresa tus credenciales para continuar
+              Ingresa tu código de usuario para continuar
             </p>
-          </div>
-
-          {/* Role Toggle */}
-          <div className="flex bg-secondary rounded-xl p-1 mb-8">
-            <button
-              onClick={() => setRole("alumno")}
-              className={cn(
-                "flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200",
-                role === "alumno"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Alumno
-            </button>
-            <button
-              onClick={() => setRole("admin")}
-              className={cn(
-                "flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200",
-                role === "admin"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Administrador
-            </button>
           </div>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
+              <Label htmlFor="userCode">Código de Usuario</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com"
+                  id="userCode"
+                  type="text"
+                  value={userCode}
+                  onChange={(e) => setUserCode(e.target.value)}
+                  placeholder="Ej: ALU001"
                   className="pl-10 input-tesla h-12"
                   required
                 />
@@ -181,6 +178,15 @@ const Login = () => {
               )}
             </Button>
           </form>
+
+          {/* Demo credentials */}
+          <div className="mt-6 p-4 bg-secondary rounded-lg">
+            <p className="text-xs text-muted-foreground text-center mb-2">Credenciales de prueba:</p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>Alumno:</strong> ALU001 / 123456</p>
+              <p><strong>Admin:</strong> ADM001 / admin123</p>
+            </div>
+          </div>
 
           <p className="text-center text-sm text-muted-foreground mt-8">
             ¿Necesitas ayuda?{" "}
