@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, FileText, Library, Users, Upload, Settings, LogOut, Zap, Menu, X, MessageSquare, ClipboardList, TrendingUp, Bell } from "lucide-react";
+import { BookOpen, Calendar, FileText, Library, Users, Upload, Settings, LogOut, Zap, Menu, X, MessageSquare, ClipboardList, TrendingUp, Bell, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ const studentMenuItems = [
 const adminMenuItems = [
   { id: "material", label: "Subir Material", icon: Upload, enabled: true },
   { id: "preguntas", label: "Gestionar Preguntas", icon: ClipboardList, enabled: true },
+  { id: "semanas", label: "Desbloquear Semanas", icon: Unlock, enabled: true },
   { id: "alumnos", label: "Gestionar Alumnos", icon: Users, enabled: false },
   { id: "configuracion", label: "Configuración", icon: Settings, enabled: false },
 ];
