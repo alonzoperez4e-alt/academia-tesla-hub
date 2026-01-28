@@ -7,7 +7,7 @@ import { UploadModal } from "@/components/admin/UploadModal";
 import { QuestionUploadModal } from "@/components/admin/QuestionUploadModal";
 import { QuestionTable } from "@/components/admin/QuestionTable";
 import { Button } from "@/components/ui/button";
-import { Upload, Filter, FileText, Video, Users, BookOpen, Construction, Plus, MessageSquare } from "lucide-react";
+import { Upload, Filter, FileText, Video, Users, BookOpen, Construction, Plus, MessageSquare, Unlock, Lock, Check } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 const mockMaterials = [
   { id: "1", name: "Introducción a la Cinemática", course: "Física", week: 1, type: "pdf" as const, uploadDate: "2024-01-15" },
@@ -59,6 +61,17 @@ const stats = [
   { label: "Cursos Activos", value: "12", icon: BookOpen, color: "bg-accent" },
 ];
 
+const initialWeekStatus = [
+  { week: 1, isUnlocked: true },
+  { week: 2, isUnlocked: true },
+  { week: 3, isUnlocked: false },
+  { week: 4, isUnlocked: false },
+  { week: 5, isUnlocked: false },
+  { week: 6, isUnlocked: false },
+  { week: 7, isUnlocked: false },
+  { week: 8, isUnlocked: false },
+];
+
 interface User {
   code: string;
   name: string;
@@ -76,6 +89,7 @@ const AdminDashboard = () => {
   const [filterWeek, setFilterWeek] = useState("all");
   const [user, setUser] = useState<User | null>(null);
   const [questions, setQuestions] = useState(mockQuestions);
+  const [weekStatus, setWeekStatus] = useState(initialWeekStatus);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -131,6 +145,76 @@ const AdminDashboard = () => {
         ¡Mantente atento!
       </p>
     </div>
+  );
+
+  const handleUnlockWeek = (weekNumber: number) => {
+    setWeekStatus(prev => 
+      prev.map(w => 
+        w.week === weekNumber ? { ...w, isUnlocked: true } : w
+      )
+    );
+    toast({
+      title: "Semana desbloqueada",
+      description: `La Semana ${weekNumber} ha sido desbloqueada para todos los alumnos.`,
+    });
+  };
+
+  // Render week management view
+  const renderWeekManagement = () => (
+    <>
+      <div className="card-tesla p-4 lg:p-6 mb-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-foreground">
+            Gestión de Semanas - Comunicación
+          </h2>
+          <p className="text-muted-foreground">
+            Desbloquea semanas para que los alumnos puedan acceder al contenido
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {weekStatus.map((week) => (
+            <div
+              key={week.week}
+              className={cn(
+                "p-4 rounded-2xl border-2 transition-all",
+                week.isUnlocked
+                  ? "bg-success/10 border-success/30"
+                  : "bg-card border-border hover:border-primary/50"
+              )}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground">Semana {week.week}</h3>
+                {week.isUnlocked ? (
+                  <div className="w-8 h-8 rounded-full bg-success flex items-center justify-center">
+                    <Check className="w-5 h-5 text-white" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                    <Lock className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-sm text-muted-foreground mb-3">
+                {week.isUnlocked ? "Disponible para alumnos" : "Contenido bloqueado"}
+              </p>
+              
+              {!week.isUnlocked && (
+                <Button
+                  onClick={() => handleUnlockWeek(week.week)}
+                  className="w-full btn-tesla-accent"
+                  size="sm"
+                >
+                  <Unlock className="w-4 h-4 mr-2" />
+                  Desbloquear
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 
   // Render question management view
@@ -317,6 +401,8 @@ const AdminDashboard = () => {
             </>
           ) : activeItem === "preguntas" ? (
             renderQuestionManagement()
+          ) : activeItem === "semanas" ? (
+            renderWeekManagement()
           ) : (
             renderComingSoon()
           )}
