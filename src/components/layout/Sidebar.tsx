@@ -1,10 +1,10 @@
-import { BookOpen, Calendar, FileText, Library, Users, Upload, Settings, LogOut, Zap, Menu, X } from "lucide-react";
+import { BookOpen, Calendar, FileText, Library, Users, Upload, Settings, LogOut, Zap, Menu, X, MessageSquare, ClipboardList, TrendingUp, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
-  role: "student" | "admin";
+  role: "student" | "admin" | "parent";
   activeItem: string;
   onItemClick: (item: string) => void;
   userName: string;
@@ -13,7 +13,7 @@ interface SidebarProps {
 }
 
 const studentMenuItems = [
-  { id: "cursos", label: "Mis Cursos", icon: BookOpen, enabled: true },
+  { id: "comunicacion", label: "Comunicación", icon: MessageSquare, enabled: true },
   { id: "horario", label: "Horario", icon: Calendar, enabled: false },
   { id: "simulacros", label: "Simulacros", icon: FileText, enabled: false },
   { id: "biblioteca", label: "Biblioteca", icon: Library, enabled: false },
@@ -21,13 +21,23 @@ const studentMenuItems = [
 
 const adminMenuItems = [
   { id: "material", label: "Subir Material", icon: Upload, enabled: true },
+  { id: "preguntas", label: "Gestionar Preguntas", icon: ClipboardList, enabled: true },
   { id: "alumnos", label: "Gestionar Alumnos", icon: Users, enabled: false },
-  { id: "cursos", label: "Gestionar Cursos", icon: BookOpen, enabled: false },
+  { id: "configuracion", label: "Configuración", icon: Settings, enabled: false },
+];
+
+const parentMenuItems = [
+  { id: "progreso", label: "Progreso", icon: TrendingUp, enabled: true },
+  { id: "notificaciones", label: "Notificaciones", icon: Bell, enabled: false },
   { id: "configuracion", label: "Configuración", icon: Settings, enabled: false },
 ];
 
 export const Sidebar = ({ role, activeItem, onItemClick, userName, userCode, userArea }: SidebarProps) => {
-  const menuItems = role === "student" ? studentMenuItems : adminMenuItems;
+  const menuItems = role === "student" 
+    ? studentMenuItems 
+    : role === "admin" 
+    ? adminMenuItems 
+    : parentMenuItems;
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const navigate = useNavigate();
@@ -40,6 +50,17 @@ export const Sidebar = ({ role, activeItem, onItemClick, userName, userCode, use
   const handleItemClick = (itemId: string, enabled: boolean) => {
     if (enabled) {
       onItemClick(itemId);
+    }
+  };
+
+  const getRoleLabel = () => {
+    switch (role) {
+      case "student":
+        return "Alumno";
+      case "admin":
+        return "Administrador";
+      case "parent":
+        return "Padre/Apoderado";
     }
   };
 
@@ -101,6 +122,7 @@ export const Sidebar = ({ role, activeItem, onItemClick, userName, userCode, use
               {userArea && (
                 <p className="text-xs text-sidebar-foreground/60">{userArea}</p>
               )}
+              <p className="text-xs text-sidebar-primary/80">{getRoleLabel()}</p>
             </div>
           )}
         </div>
