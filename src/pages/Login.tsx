@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Zap, User, Lock, Eye, EyeOff } from "lucide-react";
+import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ const mockUsers = [
   { code: "ALU001", password: "123456", role: "alumno", name: "Carlos Rodríguez", area: "Ingeniería" },
   { code: "ALU002", password: "123456", role: "alumno", name: "María López", area: "Medicina" },
   { code: "ADM001", password: "admin123", role: "admin", name: "Dr. María García", area: undefined },
+  { code: "PAD001", password: "padre123", role: "padre", name: "Roberto Rodríguez", studentCode: "ALU001", studentName: "Carlos Rodríguez" },
+  { code: "PAD002", password: "padre123", role: "padre", name: "Ana López", studentCode: "ALU002", studentName: "María López" },
 ];
 
 const Login = () => {
@@ -40,8 +42,10 @@ const Login = () => {
       
       if (user.role === "alumno") {
         navigate("/dashboard");
-      } else {
+      } else if (user.role === "admin") {
         navigate("/admin");
+      } else if (user.role === "padre") {
+        navigate("/padre");
       }
     } else {
       setError("Código de usuario o contraseña incorrectos");
@@ -187,6 +191,7 @@ const Login = () => {
             <div className="text-xs text-muted-foreground space-y-1">
               <p><strong>Alumno:</strong> ALU001 / 123456</p>
               <p><strong>Admin:</strong> ADM001 / admin123</p>
+              <p><strong>Padre:</strong> PAD001 / padre123</p>
             </div>
           </div>
 

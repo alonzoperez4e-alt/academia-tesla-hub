@@ -3,47 +3,42 @@ import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { WeekSelector } from "@/components/dashboard/WeekSelector";
-import { CourseCard } from "@/components/dashboard/CourseCard";
-import { ResourceList } from "@/components/dashboard/ResourceList";
+import { StreakWidget } from "@/components/dashboard/StreakWidget";
+import { RankingWidget } from "@/components/dashboard/RankingWidget";
+import { CommunicationCard } from "@/components/dashboard/CommunicationCard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Construction } from "lucide-react";
+import { ArrowLeft, Construction, MessageSquare } from "lucide-react";
 
-const mockCourses = [
-  { id: "1", name: "Física", icon: "fisica" as const, progress: 75, totalLessons: 12, completedLessons: 9 },
-  { id: "2", name: "Química", icon: "quimica" as const, progress: 60, totalLessons: 10, completedLessons: 6 },
-  { id: "3", name: "Raz. Matemático", icon: "razonamiento" as const, progress: 90, totalLessons: 8, completedLessons: 7 },
-  { id: "4", name: "Álgebra", icon: "matematica" as const, progress: 45, totalLessons: 15, completedLessons: 7 },
-  { id: "5", name: "Geometría", icon: "matematica" as const, progress: 30, totalLessons: 12, completedLessons: 4 },
-  { id: "6", name: "Raz. Verbal", icon: "default" as const, progress: 85, totalLessons: 10, completedLessons: 9 },
+const mockCommunicationContent = [
+  {
+    id: "teoria-1",
+    type: "teoria" as const,
+    title: "Comprensión Lectora",
+    description: "Aprende las técnicas fundamentales para analizar y comprender textos de manera efectiva.",
+    progress: 100,
+  },
+  {
+    id: "practica-1",
+    type: "practica" as const,
+    title: "Ejercicios Interactivos",
+    description: "Practica con ejercicios dinámicos que refuerzan tu comprensión lectora.",
+    progress: 65,
+  },
+  {
+    id: "simulacro-1",
+    type: "simulacro" as const,
+    title: "Examen Diario",
+    description: "Pon a prueba tus conocimientos con un simulacro cronometrado de 20 preguntas.",
+    progress: 0,
+  },
 ];
 
-const mockResources = [
-  {
-    id: "teoria",
-    name: "Teoría",
-    resources: [
-      { id: "t1", name: "Introducción a la Cinemática.pdf", type: "pdf" as const, completed: true },
-      { id: "t2", name: "Movimiento Rectilíneo Uniforme.pdf", type: "pdf" as const, completed: true },
-      { id: "t3", name: "Movimiento Rectilíneo Uniformemente Variado.pdf", type: "pdf" as const, completed: false },
-    ],
-  },
-  {
-    id: "practica",
-    name: "Práctica",
-    resources: [
-      { id: "p1", name: "Ejercicios Semana 3 - MRU.pdf", type: "pdf" as const, completed: true },
-      { id: "p2", name: "Ejercicios Semana 3 - MRUV.pdf", type: "pdf" as const, completed: false },
-    ],
-  },
-  {
-    id: "solucionario",
-    name: "Solucionario",
-    resources: [
-      { id: "s1", name: "Solución Ejercicios MRU", type: "video" as const, completed: true },
-      { id: "s2", name: "Solución Ejercicios MRUV", type: "video" as const, completed: false },
-      { id: "s3", name: "Solucionario Completo.pdf", type: "pdf" as const, completed: false },
-    ],
-  },
+const mockRankings = [
+  { position: 1, name: "Ana Martínez", points: 2450, trend: "same" as const },
+  { position: 2, name: "Luis García", points: 2380, trend: "up" as const },
+  { position: 3, name: "María Fernández", points: 2310, trend: "down" as const },
+  { position: 4, name: "Carlos Rodríguez", points: 2250, isCurrentUser: true, trend: "up" as const },
+  { position: 5, name: "Pedro Sánchez", points: 2180, trend: "down" as const },
 ];
 
 interface User {
@@ -55,12 +50,20 @@ interface User {
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const [activeItem, setActiveItem] = useState("cursos");
+  const [activeItem, setActiveItem] = useState("comunicacion");
   const [selectedWeek, setSelectedWeek] = useState(3);
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [selectedContent, setSelectedContent] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<User | null>(null);
-  const weeks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  const weeks = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  // Mock streak data
+  const streakData = {
+    currentStreak: 7,
+    longestStreak: 15,
+    weeklyProgress: [1, 1, 1, 0.5, 1, 0, 0] as number[],
+    totalPoints: 2250,
+  };
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -71,33 +74,22 @@ const StudentDashboard = () => {
     setUser(JSON.parse(userData));
   }, [navigate]);
 
-  const handleViewMaterial = (courseId: string) => {
-    setSelectedCourse(courseId);
+  const handleStartContent = (contentId: string) => {
+    console.log("Starting content:", contentId);
+    // Here you would navigate to the actual content
   };
 
-  const handleBackToCourses = () => {
-    setSelectedCourse(null);
+  const handleBackToCourse = () => {
+    setSelectedContent(null);
   };
 
-  const selectedCourseData = mockCourses.find((c) => c.id === selectedCourse);
-
-  // Filter courses based on search query
-  const filteredCourses = useMemo(() => {
-    if (!searchQuery.trim()) return mockCourses;
-    return mockCourses.filter((course) =>
-      course.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter content based on search query
+  const filteredContent = useMemo(() => {
+    if (!searchQuery.trim()) return mockCommunicationContent;
+    return mockCommunicationContent.filter((content) =>
+      content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      content.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
-
-  // Filter resources based on search query
-  const filteredResources = useMemo(() => {
-    if (!searchQuery.trim()) return mockResources;
-    return mockResources.map((category) => ({
-      ...category,
-      resources: category.resources.filter((resource) =>
-        resource.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
-    })).filter((category) => category.resources.length > 0);
   }, [searchQuery]);
 
   if (!user) return null;
@@ -136,8 +128,11 @@ const StudentDashboard = () => {
         />
 
         <main className="p-4 lg:p-6">
-          {activeItem === "cursos" ? (
+          {activeItem === "comunicacion" ? (
             <>
+              {/* Streak Widget */}
+              <StreakWidget {...streakData} />
+
               {/* Week Selector */}
               <WeekSelector
                 weeks={weeks}
@@ -145,67 +140,50 @@ const StudentDashboard = () => {
                 onWeekSelect={setSelectedWeek}
               />
 
-              {selectedCourse ? (
-                /* Course Resources View */
-                <div className="animate-slide-in-left">
-                  <div className="flex items-center gap-4 mb-6">
-                    <Button
-                      variant="ghost"
-                      onClick={handleBackToCourses}
-                      className="hover:bg-card"
-                    >
-                      <ArrowLeft className="w-5 h-5 mr-2" />
-                      Volver a Cursos
-                    </Button>
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground">
-                        {selectedCourseData?.name}
-                      </h2>
-                      <p className="text-muted-foreground">
-                        Semana {selectedWeek} - Material de estudio
-                      </p>
-                    </div>
-                  </div>
-
-                  {filteredResources.length > 0 ? (
-                    <ResourceList
-                      categories={filteredResources}
-                      onResourceClick={(id) => console.log("Open resource:", id)}
-                    />
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No se encontraron materiales para "{searchQuery}"
-                    </div>
-                  )}
+              {/* Course Header */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <MessageSquare className="w-6 h-6 text-white" />
                 </div>
-              ) : (
-                /* Courses Grid View */
                 <div>
-                  <h2 className="text-xl font-semibold text-foreground mb-4">
-                    Tus Cursos - Semana {selectedWeek}
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Comunicación
                   </h2>
-                  {filteredCourses.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                      {filteredCourses.map((course, index) => (
-                        <div
-                          key={course.id}
-                          style={{ animationDelay: `${index * 0.1}s` }}
-                          className="animate-slide-up"
-                        >
-                          <CourseCard
-                            {...course}
-                            onViewMaterial={handleViewMaterial}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No se encontraron cursos para "{searchQuery}"
-                    </div>
-                  )}
+                  <p className="text-muted-foreground">
+                    Semana {selectedWeek} - Desarrollo de habilidades comunicativas
+                  </p>
                 </div>
-              )}
+              </div>
+
+              {/* Communication Content Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                {filteredContent.length > 0 ? (
+                  filteredContent.map((content, index) => (
+                    <div
+                      key={content.id}
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                      className="animate-slide-up"
+                    >
+                      <CommunicationCard
+                        {...content}
+                        isLocked={index > 0 && filteredContent[index - 1]?.progress < 100}
+                        onStart={handleStartContent}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12 text-muted-foreground">
+                    No se encontró contenido para "{searchQuery}"
+                  </div>
+                )}
+              </div>
+
+              {/* Ranking Widget */}
+              <RankingWidget
+                rankings={mockRankings}
+                userPosition={4}
+                totalStudents={45}
+              />
             </>
           ) : (
             renderComingSoon()
