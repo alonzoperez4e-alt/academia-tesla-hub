@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flame, Gem, ChevronDown, Search, MessageSquare, Calculator, Atom, FlaskConical, Brain, Lock } from "lucide-react";
+import { Flame, Gem, ChevronDown, Search, MessageSquare, Calculator, Atom, FlaskConical, Brain, Lock, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
@@ -20,6 +20,7 @@ interface GamifiedStatusBarProps {
   onCourseChange: (courseId: string) => void;
   searchValue: string;
   onSearchChange: (value: string) => void;
+  onLogout?: () => void;
 }
 
 const courses: Course[] = [
@@ -47,6 +48,7 @@ export const GamifiedStatusBar = ({
   onCourseChange,
   searchValue,
   onSearchChange,
+  onLogout,
 }: GamifiedStatusBarProps) => {
   const [showCourseMenu, setShowCourseMenu] = useState(false);
   
@@ -171,7 +173,24 @@ export const GamifiedStatusBar = ({
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-tesla-blue-light flex items-center justify-center text-white font-bold shadow-lg">
             {userName.charAt(0)}
           </div>
+          <button
+            onClick={() => onLogout?.()}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-destructive hover:bg-destructive/10 transition-all duration-200"
+            title="Cerrar Sesión"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-sm font-medium">Salir</span>
+          </button>
         </div>
+
+        {/* Mobile Logout Button */}
+        <button
+          onClick={() => onLogout?.()}
+          className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl text-destructive hover:bg-destructive/10 transition-all"
+          title="Cerrar Sesión"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Mobile Search */}
