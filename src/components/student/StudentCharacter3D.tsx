@@ -142,42 +142,133 @@ const StudentCharacter3D = ({
               filter="url(#eggGlow)"
             />
             
-            {/* Progressive crack system */}
-            <motion.g
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: crackIntensity, opacity: crackIntensity * 0.9 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-            >
-              {/* Main vertical crack */}
-              <path
-                d={`M ${width * 0.62} ${height * 0.26} Q ${width * 0.68} ${height * 0.48} ${width * 0.74} ${height * 0.68}`}
+            {/* Progressive crack system - Breaking apart */}
+            {/* First crack appears at 25% */}
+            {crackIntensity > 0 && (
+              <motion.path
+                d={`M ${width * 0.5} ${height * 0.22} L ${width * 0.52} ${height * 0.35}`}
+                stroke="#A0522D"
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+                filter="url(#crackDepth)"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ 
+                  pathLength: Math.min(crackIntensity * 1.2, 1), 
+                  opacity: 1 
+                }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            )}
+            
+            {/* Second crack appears at 33% progress */}
+            {crackIntensity > 0.33 && (
+              <motion.path
+                d={`M ${width * 0.52} ${height * 0.35} Q ${width * 0.58} ${height * 0.45} ${width * 0.65} ${height * 0.55}`}
+                stroke="#A0522D"
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+                filter="url(#crackDepth)"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ 
+                  pathLength: Math.min((crackIntensity - 0.33) * 1.5, 1), 
+                  opacity: 1 
+                }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            )}
+            
+            {/* Third crack appears at 50% progress */}
+            {crackIntensity > 0.5 && (
+              <motion.path
+                d={`M ${width * 0.48} ${height * 0.35} Q ${width * 0.4} ${height * 0.48} ${width * 0.35} ${height * 0.6}`}
                 stroke="#A0522D"
                 strokeWidth="2.2"
                 fill="none"
                 strokeLinecap="round"
                 filter="url(#crackDepth)"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ 
+                  pathLength: Math.min((crackIntensity - 0.5) * 2, 1), 
+                  opacity: 1 
+                }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
               />
-              
-              {/* Secondary crack */}
-              <path
-                d={`M ${width * 0.32} ${height * 0.38} Q ${width * 0.24} ${height * 0.55} ${width * 0.28} ${height * 0.74}`}
-                stroke="#A0522D"
-                strokeWidth="1.8"
-                fill="none"
-                strokeLinecap="round"
-                pathLength={crackIntensity * 0.75}
-              />
-              
-              {/* Tertiary smaller crack */}
-              <path
-                d={`M ${width * 0.48} ${height * 0.28} L ${width * 0.52} ${height * 0.62}`}
+            )}
+            
+            {/* Fourth crack - horizontal split appears at 66% */}
+            {crackIntensity > 0.66 && (
+              <motion.path
+                d={`M ${width * 0.35} ${height * 0.5} L ${width * 0.65} ${height * 0.52}`}
                 stroke="#8B4513"
-                strokeWidth="1.4"
+                strokeWidth="2.8"
                 fill="none"
                 strokeLinecap="round"
-                pathLength={crackIntensity * 0.5}
+                filter="url(#crackDepth)"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ 
+                  pathLength: Math.min((crackIntensity - 0.66) * 3, 1), 
+                  opacity: 1 
+                }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
               />
-            </motion.g>
+            )}
+            
+            {/* Small radiating cracks appear at 80% */}
+            {crackIntensity > 0.8 && (
+              <motion.g
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <path d={`M ${width * 0.52} ${height * 0.35} L ${width * 0.48} ${height * 0.3}`} stroke="#A0522D" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <path d={`M ${width * 0.52} ${height * 0.35} L ${width * 0.58} ${height * 0.32}`} stroke="#A0522D" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <path d={`M ${width * 0.65} ${height * 0.55} L ${width * 0.7} ${height * 0.52}`} stroke="#8B4513" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+                <path d={`M ${width * 0.35} ${height * 0.6} L ${width * 0.3} ${height * 0.58}`} stroke="#8B4513" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+              </motion.g>
+            )}
+            
+            {/* Egg pieces separating at 90% */}
+            {crackIntensity > 0.9 && (
+              <motion.g
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                {/* Upper piece shifting */}
+                <motion.ellipse 
+                  cx={width * 0.5} 
+                  cy={height * 0.3} 
+                  rx={width * 0.25} 
+                  ry={height * 0.15}
+                  fill="url(#eggGradient3D)"
+                  opacity="0.8"
+                  animate={{ y: -3, x: 2, rotate: -5 }}
+                  transition={{ duration: 0.5 }}
+                />
+                
+                {/* Side fragments */}
+                <motion.ellipse 
+                  cx={width * 0.7} 
+                  cy={height * 0.55} 
+                  rx="12" 
+                  ry="8"
+                  fill="#F0E6D3"
+                  animate={{ x: 4, y: 2, rotate: 15 }}
+                  transition={{ duration: 0.5 }}
+                />
+                <motion.ellipse 
+                  cx={width * 0.3} 
+                  cy={height * 0.58} 
+                  rx="10" 
+                  ry="7"
+                  fill="#E8DCC6"
+                  animate={{ x: -3, y: 3, rotate: -12 }}
+                  transition={{ duration: 0.5 }}
+                />
+              </motion.g>
+            )}
             
             {/* Highlight still visible but dimmed */}
             <ellipse
@@ -186,20 +277,8 @@ const StudentCharacter3D = ({
               rx={width * 0.1}
               ry={height * 0.07}
               fill="url(#highlightGradient)"
-              opacity="0.6"
+              opacity={0.6 - (crackIntensity * 0.4)}
             />
-            
-            {/* Small shell fragments beginning to fall */}
-            {crackIntensity > 0.6 && (
-              <motion.g
-                initial={{ y: 0, opacity: 0 }}
-                animate={{ y: 8, opacity: 1 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-              >
-                <ellipse cx={width * 0.76} cy={height * 0.75} rx="5" ry="3" fill="#F0E6D3" />
-                <ellipse cx={width * 0.22} cy={height * 0.72} rx="4" ry="2.5" fill="#E8DCC6" />
-              </motion.g>
-            )}
           </motion.g>
         );
 
@@ -231,15 +310,31 @@ const StudentCharacter3D = ({
               opacity="0.3"
             />
             
-            {/* Emerging baby character */}
+            {/* Emerging baby dinosaur character */}
             <motion.g
               initial={{ scale: 0.4, y: 25 }}
               animate={{ scale: 0.75, y: 0 }}
               transition={{ duration: 1, ease: "backOut" }}
             >
-              {/* Character body */}
+              {/* Small tail starting to show */}
+              <path
+                d={`M ${width * 0.38} ${height * 0.72} Q ${width * 0.32} ${height * 0.76} ${width * 0.3} ${height * 0.78}`}
+                stroke="url(#characterBody)"
+                strokeWidth={width * 0.05}
+                fill="none"
+                strokeLinecap="round"
+              />
+              
+              {/* Tiny tail spike */}
+              <path
+                d={`M ${width * 0.34} ${height * 0.74} L ${width * 0.32} ${height * 0.7} L ${width * 0.36} ${height * 0.73} Z`}
+                fill="#228B22"
+                opacity="0.8"
+              />
+              
+              {/* Baby dinosaur body */}
               <ellipse
-                cx={width / 2}
+                cx={width * 0.49}
                 cy={height * 0.65}
                 rx={width * 0.16}
                 ry={height * 0.2}
@@ -247,33 +342,54 @@ const StudentCharacter3D = ({
                 filter="url(#characterGlow)"
               />
               
-              {/* Character head */}
-              <circle
-                cx={width / 2}
+              {/* Small back spike */}
+              <path
+                d={`M ${width * 0.46} ${height * 0.52} L ${width * 0.44} ${height * 0.48} L ${width * 0.48} ${height * 0.5} Z`}
+                fill="#228B22"
+                opacity="0.9"
+              />
+              
+              {/* Baby dinosaur head - slightly elongated */}
+              <ellipse
+                cx={width * 0.51}
                 cy={height * 0.4}
-                r={width * 0.13}
+                rx={width * 0.13}
+                ry={width * 0.11}
                 fill="url(#characterHead)"
                 filter="url(#characterGlow)"
               />
               
+              {/* Small snout */}
+              <ellipse
+                cx={width * 0.58}
+                cy={height * 0.41}
+                rx={width * 0.06}
+                ry={width * 0.05}
+                fill="url(#characterHead)"
+              />
+              
               {/* Happy eyes */}
-              <circle cx={width * 0.45} cy={height * 0.38} r="3.5" fill="#2C1810" />
-              <circle cx={width * 0.55} cy={height * 0.38} r="3.5" fill="#2C1810" />
-              <circle cx={width * 0.46} cy={height * 0.37} r="1.8" fill="#FFFFFF" />
-              <circle cx={width * 0.56} cy={height * 0.37} r="1.8" fill="#FFFFFF" />
+              <circle cx={width * 0.47} cy={height * 0.38} r="3.5" fill="#2C1810" />
+              <circle cx={width * 0.54} cy={height * 0.38} r="3.5" fill="#2C1810" />
+              <circle cx={width * 0.48} cy={height * 0.37} r="1.8" fill="#FFFFFF" />
+              <circle cx={width * 0.55} cy={height * 0.37} r="1.8" fill="#FFFFFF" />
               
               {/* Sweet smile */}
-              <ellipse
-                cx={width / 2}
-                cy={height * 0.44}
-                rx="5"
-                ry="2.5"
-                fill="#FF8FA3"
+              <path
+                d={`M ${width * 0.54} ${height * 0.43} Q ${width * 0.57} ${height * 0.45} ${width * 0.6} ${height * 0.44}`}
+                stroke="#2C1810"
+                strokeWidth="1.5"
+                fill="none"
+                strokeLinecap="round"
               />
               
               {/* Tiny arms */}
-              <circle cx={width * 0.36} cy={height * 0.6} r={width * 0.055} fill="url(#characterBody)" />
-              <circle cx={width * 0.64} cy={height * 0.6} r={width * 0.055} fill="url(#characterBody)" />
+              <ellipse cx={width * 0.38} cy={height * 0.6} rx={width * 0.04} ry={width * 0.06} fill="url(#characterBody)" />
+              <ellipse cx={width * 0.6} cy={height * 0.6} rx={width * 0.04} ry={width * 0.06} fill="url(#characterBody)" />
+              
+              {/* Tiny legs */}
+              <ellipse cx={width * 0.45} cy={height * 0.78} rx={width * 0.045} ry={height * 0.08} fill="url(#characterBody)" />
+              <ellipse cx={width * 0.53} cy={height * 0.78} rx={width * 0.045} ry={height * 0.08} fill="url(#characterBody)" />
             </motion.g>
           </motion.g>
         );
@@ -282,120 +398,281 @@ const StudentCharacter3D = ({
         return (
           <motion.g
             animate={{
-              ...floatAnimation,
-              ...breatheAnimation
+              y: [0, -4, 0],
+              transition: {
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
             }}
             style={{ transformOrigin: 'center center' }}
           >
             {/* Character shadow */}
             <ellipse
-              cx={width / 2}
-              cy={height * 0.92}
-              rx={width * 0.28}
-              ry="8"
+              cx={width * 0.5}
+              cy={height * 0.93}
+              rx={width * 0.35}
+              ry="6"
               fill="url(#dropShadow)"
-              opacity="0.35"
+              opacity="0.4"
             />
             
-            {/* Fully developed character */}
+            {/* Fully developed dinosaur - T-Rex style */}
             <motion.g
               animate={{
-                rotate: [-0.5, 0.5, -0.5],
-                transition: { duration: 5, repeat: Infinity, ease: "easeInOut" }
+                rotate: [-0.3, 0.3, -0.3],
+                transition: { duration: 4, repeat: Infinity, ease: "easeInOut" }
               }}
             >
-              {/* Character body */}
+              {/* Dinosaur tail - connected to body, curves behind */}
+              <motion.g
+                animate={{
+                  rotate: [-3, 3, -3],
+                  transition: { duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }
+                }}
+                style={{ transformOrigin: `${width * 0.38}px ${height * 0.75}px` }}
+              >
+                {/* Tail base - thick part connecting to body */}
+                <ellipse
+                  cx={width * 0.38}
+                  cy={height * 0.75}
+                  rx={width * 0.07}
+                  ry={height * 0.1}
+                  fill="url(#dinoBody)"
+                />
+                
+                {/* Tail middle section */}
+                <path
+                  d={`M ${width * 0.36} ${height * 0.75} Q ${width * 0.24} ${height * 0.78} ${width * 0.16} ${height * 0.82}`}
+                  stroke="url(#dinoBody)"
+                  strokeWidth={width * 0.09}
+                  fill="none"
+                  strokeLinecap="round"
+                />
+                
+                {/* Tail tip - thinner */}
+                <path
+                  d={`M ${width * 0.16} ${height * 0.82} Q ${width * 0.09} ${height * 0.85} ${width * 0.05} ${height * 0.87}`}
+                  stroke="url(#dinoBody)"
+                  strokeWidth={width * 0.05}
+                  fill="none"
+                  strokeLinecap="round"
+                />
+                
+                {/* Tail spikes/plates */}
+                <path
+                  d={`M ${width * 0.3} ${height * 0.76} L ${width * 0.28} ${height * 0.71} L ${width * 0.32} ${height * 0.745} Z`}
+                  fill="#6B8E23"
+                  filter="url(#spikeGlow)"
+                />
+                <path
+                  d={`M ${width * 0.22} ${height * 0.79} L ${width * 0.2} ${height * 0.74} L ${width * 0.24} ${height * 0.775} Z`}
+                  fill="#556B2F"
+                  filter="url(#spikeGlow)"
+                />
+                <path
+                  d={`M ${width * 0.13} ${height * 0.835} L ${width * 0.11} ${height * 0.79} L ${width * 0.15} ${height * 0.82} Z`}
+                  fill="#6B8E23"
+                  filter="url(#spikeGlow)"
+                />
+              </motion.g>
+              
+              {/* Back leg (behind body) */}
+              <ellipse 
+                cx={width * 0.46} 
+                cy={height * 0.82} 
+                rx={width * 0.07} 
+                ry={height * 0.14} 
+                fill="url(#dinoBody)" 
+                opacity="0.85"
+              />
+              <ellipse 
+                cx={width * 0.46} 
+                cy={height * 0.92} 
+                rx={width * 0.08} 
+                ry={height * 0.05} 
+                fill="url(#dinoBody)" 
+                opacity="0.85"
+              />
+              
+              {/* Main dinosaur body - large and rounded */}
               <ellipse
-                cx={width / 2}
-                cy={height * 0.68}
-                rx={width * 0.17}
-                ry={height * 0.22}
-                fill="url(#characterBody)"
+                cx={width * 0.52}
+                cy={height * 0.7}
+                rx={width * 0.21}
+                ry={height * 0.25}
+                fill="url(#dinoBody)"
                 filter="url(#characterGlow)"
               />
               
-              {/* Character head */}
-              <circle
-                cx={width / 2}
-                cy={height * 0.38}
-                r={width * 0.15}
-                fill="url(#characterHead)"
+              {/* Belly/chest - lighter color */}
+              <ellipse
+                cx={width * 0.54}
+                cy={height * 0.74}
+                rx={width * 0.14}
+                ry={height * 0.18}
+                fill="url(#dinoBelly)"
+              />
+              
+              {/* Back plates/spikes running down spine */}
+              <path
+                d={`M ${width * 0.44} ${height * 0.52} L ${width * 0.42} ${height * 0.46} L ${width * 0.46} ${height * 0.505} Z`}
+                fill="#6B8E23"
+                filter="url(#spikeGlow)"
+              />
+              <path
+                d={`M ${width * 0.5} ${height * 0.48} L ${width * 0.48} ${height * 0.42} L ${width * 0.52} ${height * 0.465} Z`}
+                fill="#556B2F"
+                filter="url(#spikeGlow)"
+              />
+              <path
+                d={`M ${width * 0.56} ${height * 0.5} L ${width * 0.54} ${height * 0.44} L ${width * 0.58} ${height * 0.485} Z`}
+                fill="#6B8E23"
+                filter="url(#spikeGlow)"
+              />
+              
+              {/* Neck - thick and muscular */}
+              <ellipse
+                cx={width * 0.57}
+                cy={height * 0.52}
+                rx={width * 0.12}
+                ry={height * 0.14}
+                fill="url(#dinoBody)"
+              />
+              
+              {/* Dinosaur head - T-Rex style with large jaw */}
+              <ellipse
+                cx={width * 0.6}
+                cy={height * 0.36}
+                rx={width * 0.18}
+                ry={height * 0.16}
+                fill="url(#dinoHead)"
                 filter="url(#characterGlow)"
               />
               
-              {/* Joyful closed eyes */}
+              {/* Upper jaw/snout */}
+              <ellipse
+                cx={width * 0.7}
+                cy={height * 0.34}
+                rx={width * 0.1}
+                ry={height * 0.08}
+                fill="url(#dinoHead)"
+              />
+              
+              {/* Lower jaw */}
+              <ellipse
+                cx={width * 0.7}
+                cy={height * 0.39}
+                rx={width * 0.09}
+                ry={height * 0.06}
+                fill="url(#dinoHead)"
+              />
+              
+              {/* Nostrils */}
+              <circle cx={width * 0.76} cy={height * 0.33} r="2.5" fill="#4a3520" opacity="0.8" />
+              
+              {/* Eye - fierce but friendly */}
+              <circle cx={width * 0.58} cy={height * 0.33} r="5" fill="#2C1810" />
+              <circle cx={width * 0.595} cy={height * 0.32} r="2.5" fill="#FFFFFF" />
+              
+              {/* Eyebrow ridge - for character */}
               <path
-                d={`M ${width * 0.43} ${height * 0.36} Q ${width * 0.45} ${height * 0.39} ${width * 0.47} ${height * 0.36}`}
-                stroke="#2C1810"
-                strokeWidth="2.5"
+                d={`M ${width * 0.54} ${height * 0.3} Q ${width * 0.58} ${height * 0.29} ${width * 0.62} ${height * 0.3}`}
+                stroke="#556B2F"
+                strokeWidth="2"
                 fill="none"
                 strokeLinecap="round"
               />
+              
+              {/* Mouth line */}
               <path
-                d={`M ${width * 0.53} ${height * 0.36} Q ${width * 0.55} ${height * 0.39} ${width * 0.57} ${height * 0.36}`}
-                stroke="#2C1810"
-                strokeWidth="2.5"
+                d={`M ${width * 0.67} ${height * 0.37} Q ${width * 0.72} ${height * 0.385} ${width * 0.76} ${height * 0.38}`}
+                stroke="#4a3520"
+                strokeWidth="2"
                 fill="none"
                 strokeLinecap="round"
               />
               
-              {/* Big happy smile */}
+              {/* Teeth - small hints */}
               <path
-                d={`M ${width * 0.4} ${height * 0.44} Q ${width / 2} ${height * 0.49} ${width * 0.6} ${height * 0.44}`}
-                stroke="#FF69B4"
-                strokeWidth="3.5"
-                fill="none"
+                d={`M ${width * 0.7} ${height * 0.37} L ${width * 0.7} ${height * 0.39}`}
+                stroke="#FFFACD"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+              />
+              <path
+                d={`M ${width * 0.73} ${height * 0.375} L ${width * 0.73} ${height * 0.395}`}
+                stroke="#FFFACD"
+                strokeWidth="1.2"
                 strokeLinecap="round"
               />
               
-              {/* Arms raised in triumph */}
-              <circle cx={width * 0.28} cy={height * 0.58} r={width * 0.065} fill="url(#characterBody)" />
-              <circle cx={width * 0.72} cy={height * 0.58} r={width * 0.065} fill="url(#characterBody)" />
+              {/* Small arms - T-Rex style */}
+              <motion.g
+                animate={{
+                  rotate: [-8, 8, -8],
+                  transition: { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+                }}
+                style={{ transformOrigin: `${width * 0.4}px ${height * 0.62}px` }}
+              >
+                <ellipse cx={width * 0.4} cy={height * 0.64} rx={width * 0.045} ry={height * 0.09} fill="url(#dinoBody)" />
+                {/* Two clawed fingers */}
+                <path
+                  d={`M ${width * 0.385} ${height * 0.72} L ${width * 0.375} ${height * 0.75}`}
+                  stroke="#6B8E23"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d={`M ${width * 0.4} ${height * 0.73} L ${width * 0.39} ${height * 0.76}`}
+                  stroke="#6B8E23"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </motion.g>
               
-              {/* Legs */}
-              <ellipse cx={width * 0.43} cy={height * 0.82} rx={width * 0.055} ry={height * 0.09} fill="url(#characterBody)" />
-              <ellipse cx={width * 0.57} cy={height * 0.82} rx={width * 0.055} ry={height * 0.09} fill="url(#characterBody)" />
+              {/* Front leg - powerful */}
+              <ellipse cx={width * 0.6} cy={height * 0.84} rx={width * 0.075} ry={height * 0.14} fill="url(#dinoBody)" />
+              {/* Front foot */}
+              <ellipse cx={width * 0.6} cy={height * 0.94} rx={width * 0.09} ry={height * 0.05} fill="url(#dinoBody)" />
               
-              {/* Simple hair detail */}
+              {/* Claws on front foot */}
               <path
-                d={`M ${width * 0.4} ${height * 0.28} Q ${width / 2} ${height * 0.24} ${width * 0.6} ${height * 0.28}`}
-                stroke="#D2691E"
-                strokeWidth="2.2"
-                fill="none"
+                d={`M ${width * 0.54} ${height * 0.95} L ${width * 0.52} ${height * 0.97}`}
+                stroke="#4a3520"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <path
+                d={`M ${width * 0.6} ${height * 0.96} L ${width * 0.6} ${height * 0.98}`}
+                stroke="#4a3520"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <path
+                d={`M ${width * 0.66} ${height * 0.95} L ${width * 0.68} ${height * 0.97}`}
+                stroke="#4a3520"
+                strokeWidth="2"
                 strokeLinecap="round"
               />
             </motion.g>
             
-            {/* Celebration sparkles */}
+            {/* Success sparkles - smaller and more subtle */}
             <motion.g
               animate={{
-                scale: [0.8, 1.4, 0.8],
-                opacity: [0.4, 1, 0.4],
-                rotate: [0, 360]
+                scale: [0.9, 1.2, 0.9],
+                opacity: [0.5, 0.9, 0.5],
+                rotate: [0, 180, 360]
               }}
               transition={{
                 duration: 4,
                 repeat: Infinity,
-                ease: "easeInOut",
-                repeatType: "loop"
+                ease: "easeInOut"
               }}
             >
-              <polygon
-                points={`${width * 0.2},${height * 0.25} ${width * 0.22},${height * 0.28} ${width * 0.2},${height * 0.31} ${width * 0.18},${height * 0.28}`}
-                fill="#FFD700"
-              />
-              <polygon
-                points={`${width * 0.8},${height * 0.4} ${width * 0.82},${height * 0.43} ${width * 0.8},${height * 0.46} ${width * 0.78},${height * 0.43}`}
-                fill="#FFD700"
-              />
-              <polygon
-                points={`${width * 0.15},${height * 0.65} ${width * 0.17},${height * 0.68} ${width * 0.15},${height * 0.71} ${width * 0.13},${height * 0.68}`}
-                fill="#FFA500"
-              />
-              <polygon
-                points={`${width * 0.85},${height * 0.2} ${width * 0.87},${height * 0.23} ${width * 0.85},${height * 0.26} ${width * 0.83},${height * 0.23}`}
-                fill="#FF69B4"
-              />
+              <circle cx={width * 0.2} cy={height * 0.3} r="3" fill="#FFD700" opacity="0.7" />
+              <circle cx={width * 0.85} cy={height * 0.45} r="2.5" fill="#FFA500" opacity="0.7" />
+              <circle cx={width * 0.15} cy={height * 0.6} r="2" fill="#FFD700" opacity="0.6" />
             </motion.g>
           </motion.g>
         );
@@ -441,18 +718,39 @@ const StudentCharacter3D = ({
               <stop offset="100%" stopColor="rgba(255,255,255,0.1)" />
             </linearGradient>
             
-            {/* Character body gradient */}
+            {/* Character body gradient - baby dino (green) */}
             <radialGradient id="characterBody" cx="0.25" cy="0.2" r="0.85">
               <stop offset="0%" stopColor="#90EE90" />
               <stop offset="50%" stopColor="#32CD32" />
               <stop offset="100%" stopColor="#228B22" />
             </radialGradient>
             
-            {/* Character head gradient */}
+            {/* Character head gradient - baby dino (green) */}
             <radialGradient id="characterHead" cx="0.25" cy="0.15" r="0.9">
               <stop offset="0%" stopColor="#98FB98" />
               <stop offset="50%" stopColor="#90EE90" />
               <stop offset="100%" stopColor="#32CD32" />
+            </radialGradient>
+            
+            {/* Adult dinosaur body gradient - realistic olive/forest green */}
+            <radialGradient id="dinoBody" cx="0.3" cy="0.25" r="0.9">
+              <stop offset="0%" stopColor="#9ACD32" />
+              <stop offset="40%" stopColor="#6B8E23" />
+              <stop offset="100%" stopColor="#556B2F" />
+            </radialGradient>
+            
+            {/* Adult dinosaur head gradient */}
+            <radialGradient id="dinoHead" cx="0.3" cy="0.2" r="0.85">
+              <stop offset="0%" stopColor="#ADFF2F" />
+              <stop offset="50%" stopColor="#9ACD32" />
+              <stop offset="100%" stopColor="#6B8E23" />
+            </radialGradient>
+            
+            {/* Adult dinosaur belly gradient - lighter */}
+            <radialGradient id="dinoBelly" cx="0.4" cy="0.3" r="0.8">
+              <stop offset="0%" stopColor="#F0E68C" />
+              <stop offset="60%" stopColor="#BDB76B" />
+              <stop offset="100%" stopColor="#8B8B7A" opacity="0.7" />
             </radialGradient>
             
             {/* Shell fragment gradient */}
@@ -480,6 +778,10 @@ const StudentCharacter3D = ({
             
             <filter id="crackDepth" x="-50%" y="-50%" width="200%" height="200%">
               <feDropShadow dx="1" dy="2" stdDeviation="1.5" floodColor="rgba(0,0,0,0.5)" />
+            </filter>
+            
+            <filter id="spikeGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="rgba(34,139,34,0.4)" />
             </filter>
           </defs>
           

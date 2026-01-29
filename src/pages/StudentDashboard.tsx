@@ -263,7 +263,7 @@ const StudentDashboard = () => {
   // Gamification stats (removed lives)
   const [stats, setStats] = useState({
     currentStreak: 7,
-    gems: 2499,
+    gems: 3500,
   });
 
   // Calculate overall progress
@@ -519,28 +519,6 @@ const StudentDashboard = () => {
         onSearchChange={setSearchQuery}
         onLogout={handleLogout}
       />
-
-      {/* Student Mini Profile Bar */}
-      <div className="bg-background/50 border-b border-border px-4 py-2">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <StudentMiniProfile
-            userName={user.name.split(" ")[0]}
-            overallProgress={overallProgress}
-            dinosaurProgress={dinosaurProgress}
-            currentExp={stats.gems}
-          />
-          
-          {/* Quick stats for larger screens */}
-          <div className="hidden md:flex items-center gap-4 text-sm">
-            <span className="text-muted-foreground">
-              Lecciones: <span className="font-semibold text-foreground">{completedLessons}/{totalLessons}</span>
-            </span>
-            <span className="text-muted-foreground">
-              Racha: <span className="font-semibold text-orange-500">{stats.currentStreak} días</span>
-            </span>
-          </div>
-        </div>
-      </div>
 
       {/* Desktop Navigation Tabs */}
       <div className="hidden lg:flex items-center justify-center gap-2 py-4 bg-card/50 border-b border-border">

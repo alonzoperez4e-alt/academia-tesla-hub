@@ -75,61 +75,64 @@ const StudentProgressProfile = ({
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.6, ease: "backOut" }}
-            className="flex justify-center"
+            className="flex justify-center py-4"
           >
-            <div className="relative">
-              <StudentCharacter3D 
-                progress={dinosaurProgress} 
-                size="lg"
-                showProgressText={true}
-              />
+            <div className="relative px-4 sm:px-8">
+              {/* Dinosaurio con escala ligeramente aumentada (8%) */}
+              <div className="transform scale-105 sm:scale-110">
+                <StudentCharacter3D 
+                  progress={dinosaurProgress} 
+                  size="md"
+                  showProgressText={true}
+                />
+              </div>
               
-              {/* Floating stats around character */}
+              {/* Floating stats around character - más sutiles y lentos */}
               <motion.div
                 animate={{
-                  rotate: [0, 360],
-                  transition: { duration: 20, repeat: Infinity, ease: "linear" }
+                  rotate: [0, 360]
                 }}
+                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
                 className="absolute inset-0 pointer-events-none"
               >
-                {/* EXP Badge */}
+                {/* EXP Badge - discreto */}
                 <motion.div
                   animate={{
-                    rotate: [0, -360],
-                    transition: { duration: 20, repeat: Infinity, ease: "linear" }
+                    rotate: [0, -360]
                   }}
-                  className="absolute -top-4 -right-8"
+                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                  className="absolute -top-2 -right-4 sm:-right-6 opacity-75 hover:opacity-100 transition-opacity"
                 >
-                  <Badge className="bg-yellow-500 text-white px-3 py-1 font-bold shadow-lg">
-                    <Star className="w-4 h-4 mr-1" />
+                  <Badge className="bg-yellow-500 text-white px-2 py-1 text-xs sm:text-sm font-bold shadow-md">
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                     {totalExp} EXP
                   </Badge>
                 </motion.div>
                 
-                {/* Streak Badge */}
+                {/* Streak Badge - discreto */}
                 <motion.div
                   animate={{
-                    rotate: [0, -360],
-                    transition: { duration: 20, repeat: Infinity, ease: "linear" }
+                    rotate: [0, -360]
                   }}
-                  className="absolute top-8 -left-12"
+                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                  className="absolute top-6 sm:top-8 -left-4 sm:-left-8 opacity-75 hover:opacity-100 transition-opacity"
                 >
-                  <Badge className="bg-orange-500 text-white px-3 py-1 font-bold shadow-lg">
-                    <TrendingUp className="w-4 h-4 mr-1" />
+                  <Badge className="bg-orange-500 text-white px-2 py-1 text-xs sm:text-sm font-bold shadow-md">
+                    <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                     {currentStreak} días
                   </Badge>
                 </motion.div>
                 
-                {/* Lessons Badge */}
+                {/* Lessons Badge - discreto */}
                 <motion.div
                   animate={{
-                    rotate: [0, -360],
-                    transition: { duration: 20, repeat: Infinity, ease: "linear" }
+                    rotate: [0, -360]
                   }}
-                  className="absolute -bottom-6 left-4"
+                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                  className="absolute -bottom-4 sm:-bottom-6 left-2 sm:left-4 opacity-75 hover:opacity-100 transition-opacity"
                 >
-                  <Badge className="bg-green-500 text-white px-3 py-1 font-bold shadow-lg">
-                    <Trophy className="w-4 h-4 mr-1" />
+                  <Badge className="bg-green-500 text-white px-2 py-1 text-xs sm:text-sm font-bold shadow-lg">
+                    <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                     {completedLessons}/{totalLessons}
                   </Badge>
                 </motion.div>
