@@ -28,18 +28,18 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    
+
     // Simulate login
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    
+
     const user = mockUsers.find(
       (u) => u.code.toLowerCase() === userCode.toLowerCase() && u.password === password
     );
-    
+
     if (user) {
       // Store user data in sessionStorage for the session
       sessionStorage.setItem("currentUser", JSON.stringify(user));
-      
+
       if (user.role === "alumno") {
         navigate("/dashboard");
       } else if (user.role === "admin") {
@@ -50,7 +50,7 @@ const Login = () => {
     } else {
       setError("Código de usuario o contraseña incorrectos");
     }
-    
+
     setIsLoading(false);
   };
 
@@ -63,7 +63,7 @@ const Login = () => {
           <div className="absolute top-20 left-20 w-64 h-64 bg-accent rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent rounded-full blur-3xl" />
         </div>
-        
+
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12">
           <div className="text-center animate-fade-in">
@@ -71,12 +71,12 @@ const Login = () => {
             <div className="w-48 h-48 bg-transparent flex items-center justify-center mx-auto mb-8">
               <img src={logo} alt="Tesla Logo" className="w-full h-full object-contain" />
             </div>
-            
+
             <h1 className="text-4xl font-bold text-primary-foreground mb-2">
               Academia
             </h1>
             <p className="text-5xl font-bold text-accent mb-8">TESLA</p>
-            
+
             <div className="max-w-md mx-auto">
               <p className="text-lg text-primary-foreground/80 italic">
                 "La educación es el arma más poderosa que puedes usar para cambiar el mundo."

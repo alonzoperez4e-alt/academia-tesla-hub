@@ -472,6 +472,7 @@ const StudentDashboard = () => {
         onCourseChange={setSelectedCourse}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
+        onLogout={handleLogout}
       />
 
       {/* Desktop Navigation Tabs */}
