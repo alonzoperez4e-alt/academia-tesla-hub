@@ -5,6 +5,9 @@ import { LearningPath } from "@/components/gamification/LearningPath";
 import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
 import { StreakMascot } from "@/components/gamification/StreakMascot";
+import StudentCharacter3D from "@/components/student/StudentCharacter3D";
+import StudentProgressProfile from "@/components/student/StudentProgressProfile";
+import StudentMiniProfile from "@/components/student/StudentMiniProfile";
 import { QuizModal, QuizQuestion } from "@/components/student/QuizModal";
 import { Construction, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -259,9 +262,29 @@ const StudentDashboard = () => {
 
   // Gamification stats (removed lives)
   const [stats, setStats] = useState({
-    currentStreak: 30,
+    currentStreak: 7,
     gems: 2250,
   });
+
+  // Calculate overall progress
+  const overallProgress = useMemo(() => {
+    const totalLessons = mockWeekSections.reduce((total, week) => total + week.lessons.length, 0);
+    const completedLessons = mockWeekSections.reduce((completed, week) => {
+      return completed + week.lessons.filter(lesson => lesson.isCompleted).length;
+    }, 0);
+    
+    return Math.round((completedLessons / totalLessons) * 100);
+  }, []);
+
+  const totalLessons = useMemo(() => {
+    return mockWeekSections.reduce((total, week) => total + week.lessons.length, 0);
+  }, []);
+
+  const completedLessons = useMemo(() => {
+    return mockWeekSections.reduce((completed, week) => {
+      return completed + week.lessons.filter(lesson => lesson.isCompleted).length;
+    }, 0);
+  }, []);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -356,9 +379,18 @@ const StudentDashboard = () => {
       case "path":
         return (
           <div className="pb-24 lg:pb-8">
-            {/* Streak Mascot - Show on top of path */}
+            {/* Overall Progress Character - Show on top of path */}
             <div className="flex justify-center py-6">
-              <StreakMascot streakDays={stats.currentStreak} />
+              <div className="text-center">
+                <StudentCharacter3D 
+                  progress={overallProgress} 
+                  size="md"
+                  showProgressText={true}
+                />
+                <div className="mt-2 text-sm font-medium text-muted-foreground">
+                  Tu progreso general: {completedLessons}/{totalLessons} lecciones
+                </div>
+              </div>
             </div>
             
             <LearningPath
@@ -383,21 +415,19 @@ const StudentDashboard = () => {
       
       case "profile":
         return (
-          <div className="max-w-md mx-auto px-4 py-8 pb-24 lg:pb-8">
-            <div className="text-center mb-8">
-              <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-primary to-tesla-blue-light flex items-center justify-center text-white text-4xl font-bold shadow-xl mb-4">
-                {user.name.charAt(0)}
-              </div>
-              <h2 className="text-2xl font-bold text-foreground">{user.name}</h2>
-              <p className="text-muted-foreground">{user.code}</p>
-              {user.area && (
-                <span className="inline-block mt-2 px-4 py-1 bg-accent/20 text-accent-foreground rounded-full text-sm font-medium">
-                  Área: {user.area}
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-4">
+          <div className="pb-24 lg:pb-8 px-4">
+            <StudentProgressProfile
+              userName={user.name.split(" ")[0]}
+              overallProgress={overallProgress}
+              completedLessons={completedLessons}
+              totalLessons={totalLessons}
+              currentStreak={stats.currentStreak}
+              totalExp={stats.gems}
+              weeklyGoal={75}
+            />
+            
+            {/* Additional Profile Info */}
+            <div className="max-w-md mx-auto mt-8 space-y-4">
               <div className="bg-card rounded-2xl p-4 border border-border">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                   <User className="w-5 h-5" />
@@ -421,12 +451,6 @@ const StudentDashboard = () => {
                     <span className="font-medium text-orange-500">{stats.currentStreak} días</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Streak Mascot in Profile */}
-              <div className="bg-card rounded-2xl p-4 border border-border">
-                <h3 className="font-semibold text-foreground mb-4 text-center">Mi Mascota de Racha</h3>
-                <StreakMascot streakDays={stats.currentStreak} />
               </div>
 
               <Button 
@@ -474,6 +498,27 @@ const StudentDashboard = () => {
         onSearchChange={setSearchQuery}
         onLogout={handleLogout}
       />
+
+      {/* Student Mini Profile Bar */}
+      <div className="bg-background/50 border-b border-border px-4 py-2">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <StudentMiniProfile
+            userName={user.name.split(" ")[0]}
+            overallProgress={overallProgress}
+            currentExp={stats.gems}
+          />
+          
+          {/* Quick stats for larger screens */}
+          <div className="hidden md:flex items-center gap-4 text-sm">
+            <span className="text-muted-foreground">
+              Lecciones: <span className="font-semibold text-foreground">{completedLessons}/{totalLessons}</span>
+            </span>
+            <span className="text-muted-foreground">
+              Racha: <span className="font-semibold text-orange-500">{stats.currentStreak} días</span>
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Desktop Navigation Tabs */}
       <div className="hidden lg:flex items-center justify-center gap-2 py-4 bg-card/50 border-b border-border">

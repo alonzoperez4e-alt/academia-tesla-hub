@@ -9,6 +9,9 @@ import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ParentDashboard from "./pages/ParentDashboard";
 import NotFound from "./pages/NotFound";
+import TestComponent from "./test-component";
+
+import DinosaurGrowthTimeline from "./components/student/DinosaurGrowthTimeline";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +27,8 @@ const App = () => (
           <Route path="/dashboard" element={<StudentDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/padre" element={<ParentDashboard />} />
+          <Route path="/test" element={<TestComponent />} />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

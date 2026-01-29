@@ -1,6 +1,7 @@
 import { BookOpen, Play, FileText, Calculator, Atom, FlaskConical, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import StudentCharacter3D from "@/components/student/StudentCharacter3D";
 
 interface CourseCardProps {
   id: string;
@@ -60,17 +61,35 @@ export const CourseCard = ({
         {name}
       </h3>
 
-      {/* Progress Bar */}
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-muted-foreground">Progreso</span>
-          <span className="text-sm font-semibold text-primary">{progress}%</span>
-        </div>
-        <div className="progress-tesla h-2">
-          <div
-            className="progress-tesla-fill"
-            style={{ width: `${progress}%` }}
+      {/* Progress Section with 3D Character */}
+      <div className="mb-4 flex items-center gap-4">
+        {/* 3D Character */}
+        <div className="flex-shrink-0">
+          <StudentCharacter3D 
+            progress={progress} 
+            size="sm" 
+            showProgressText={false}
           />
+        </div>
+        
+        {/* Traditional Progress Info */}
+        <div className="flex-1">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-muted-foreground">Progreso</span>
+            <span className="text-sm font-semibold text-primary">{progress}%</span>
+          </div>
+          <div className="progress-tesla h-2">
+            <div
+              className="progress-tesla-fill"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="text-xs text-muted-foreground mt-1 text-center">
+            {progress < 25 && "🥚 Comenzando"}
+            {progress >= 25 && progress < 50 && "🐣 Creciendo"}
+            {progress >= 50 && progress < 75 && "🐤 Avanzando"}
+            {progress >= 75 && "😊 ¡Experto!"}
+          </div>
         </div>
       </div>
 
