@@ -259,7 +259,7 @@ const StudentDashboard = () => {
 
   // Gamification stats (removed lives)
   const [stats, setStats] = useState({
-    currentStreak: 7,
+    currentStreak: 30,
     gems: 2250,
   });
 
