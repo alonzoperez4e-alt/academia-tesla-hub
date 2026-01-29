@@ -301,25 +301,6 @@ const StudentProgressProfile = ({
               </CardContent>
             </Card>
           </motion.div>
-
-          {/* Motivational Message */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1.2, duration: 0.5 }}
-            className="text-center p-4 sm:p-6 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-2xl border border-primary/30"
-          >
-            <h4 className="font-bold text-base sm:text-lg text-primary mb-2">
-              {totalExp < 1250 && "¡Comienza tu aventura de aprendizaje! 🚀"}
-              {totalExp >= 1250 && totalExp < 2500 && "¡Excelente progreso! Tu personaje está rompiendo el cascarón 💪"}
-              {totalExp >= 2500 && totalExp < 3750 && "¡Increíble! Tu personaje está naciendo 🌟"}
-              {totalExp >= 3750 && "¡Eres increíble! Tu dinosaurio ha crecido completamente 🦕🎊"}
-            </h4>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Cada lección completada te da EXP y hace que tu personaje crezca y evolucione. 
-              ¡Continúa aprendiendo para desbloquear nuevas etapas!
-            </p>
-          </motion.div>
         </CardContent>
       </Card>
     </motion.div>

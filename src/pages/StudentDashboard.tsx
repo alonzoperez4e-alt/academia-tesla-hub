@@ -9,7 +9,7 @@ import StudentCharacter3D from "@/components/student/StudentCharacter3D";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import StudentMiniProfile from "@/components/student/StudentMiniProfile";
 import { QuizModal, QuizQuestion } from "@/components/student/QuizModal";
-import { Construction, User, LogOut } from "lucide-react";
+import { Construction, User, LogOut, IdCard, GraduationCap, Flame, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
@@ -447,36 +447,91 @@ const StudentDashboard = () => {
               weeklyGoal={75}
             />
             
-            {/* Additional Profile Info */}
-            <div className="max-w-md mx-auto mt-8 space-y-4">
-              <div className="bg-card rounded-2xl p-4 border border-border">
-                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Información del Perfil
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Código</span>
-                    <span className="font-medium">{user.code}</span>
+            {/* Additional Profile Info - Rediseñado */}
+            <div className="max-w-2xl mx-auto mt-8 space-y-4 px-4">
+              <div className="bg-gradient-to-br from-white to-primary/5 rounded-2xl p-5 sm:p-6 border border-primary/20 shadow-lg">
+                {/* Header */}
+                <div className="flex items-center justify-center gap-2 mb-6">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <User className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Área</span>
-                    <span className="font-medium">{user.area || "No asignada"}</span>
+                  <h3 className="font-bold text-lg text-foreground">
+                    Información del Perfil
+                  </h3>
+                </div>
+                
+                {/* Grid de información */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Código del estudiante */}
+                  <div className="bg-white/80 rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all hover:shadow-md">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <IdCard className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Código de Estudiante</p>
+                        <p className="font-bold text-base text-foreground">{user.code}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">EXP Total</span>
-                    <span className="font-medium text-primary">{stats.gems}</span>
+
+                  {/* Área */}
+                  <div className="bg-white/80 rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all hover:shadow-md">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <GraduationCap className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Área de Estudio</p>
+                        <p className="font-bold text-base text-foreground">{user.area || "No asignada"}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Racha Actual</span>
-                    <span className="font-medium text-orange-500">{stats.currentStreak} días</span>
+
+                  {/* EXP Total - Destacado */}
+                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 rounded-xl p-4 border-2 border-yellow-300/50 hover:border-yellow-400 transition-all hover:shadow-md">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-yellow-400/20 rounded-lg">
+                        <Zap className="w-5 h-5 text-yellow-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-yellow-700/70 mb-1">EXP Total Acumulado</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="font-bold text-2xl text-yellow-700">{stats.gems}</p>
+                          <span className="text-sm text-yellow-600/70">EXP</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Racha Actual - Destacado */}
+                  <div className="bg-gradient-to-br from-orange-50 to-red-50/50 rounded-xl p-4 border-2 border-orange-300/50 hover:border-orange-400 transition-all hover:shadow-md">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-orange-400/20 rounded-lg">
+                        <Flame className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-orange-700/70 mb-1">Racha de Aprendizaje</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="font-bold text-2xl text-orange-600">{stats.currentStreak}</p>
+                          <span className="text-sm text-orange-500/70">días</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mensaje motivacional */}
+                <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                  <p className="text-xs sm:text-sm text-center text-muted-foreground">
+                    💪 ¡Sigue acumulando EXP y mantén tu racha activa para desbloquear más recompensas!
+                  </p>
                 </div>
               </div>
 
               <Button 
                 variant="outline" 
-                className="w-full rounded-2xl"
+                className="w-full rounded-2xl hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all"
                 onClick={handleLogout}
               >
                 <LogOut className="w-4 h-4 mr-2" />
