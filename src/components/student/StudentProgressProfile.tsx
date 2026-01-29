@@ -217,41 +217,86 @@ const StudentProgressProfile = ({
             transition={{ delay: 0.8, duration: 0.5 }}
           >
             <Card className="bg-gradient-to-r from-accent/10 to-primary/10 border-accent/20">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg text-center text-foreground mb-6">
+              <CardContent className="p-4 sm:p-6">
+                <h3 className="font-bold text-base sm:text-lg text-center text-foreground mb-4 sm:mb-6">
                   🌱 Etapas de Evolución de tu Personaje
                 </h3>
                 
-                <div className="flex justify-between items-center mb-4">
+                {/* Grid responsive: 2 columnas en móvil, 4 en desktop */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                   {[
-                    { threshold: 0, emoji: "🥚", label: "Huevo", description: "Inicio" },
-                    { threshold: 25, emoji: "🐣", label: "Rompiendo", description: "Progreso" },
-                    { threshold: 50, emoji: "🐤", label: "Naciendo", description: "Avanzando" },
-                    { threshold: 75, emoji: "😊", label: "Crecido", description: "¡Experto!" }
-                  ].map((stage, index) => (
-                    <div key={stage.threshold} className="flex flex-col items-center">
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 1 + index * 0.1, duration: 0.3 }}
-                        className={`w-12 h-12 rounded-full flex items-center justify-center text-xl mb-2 transition-all duration-500 ${
-                          overallProgress >= stage.threshold
-                            ? 'bg-primary text-primary-foreground shadow-lg scale-110'
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        {stage.emoji}
-                      </motion.div>
-                      <span className="text-xs font-medium text-center">{stage.label}</span>
-                      <span className="text-xs text-muted-foreground text-center">{stage.description}</span>
-                      
-                      {index < 3 && (
-                        <div className={`h-1 w-16 mx-2 rounded-full mt-2 transition-colors duration-500 ${
-                          overallProgress >= [25, 50, 75][index] ? 'bg-primary' : 'bg-muted'
-                        }`} />
-                      )}
-                    </div>
-                  ))}
+                    { expMin: 0, expMax: 1249, emoji: "🥚", label: "Huevo", description: "0-1249 EXP" },
+                    { expMin: 1250, expMax: 2499, emoji: "🐣", label: "Rompiendo", description: "1250-2499 EXP" },
+                    { expMin: 2500, expMax: 3749, emoji: "🐤", label: "Naciendo", description: "2500-3749 EXP" },
+                    { expMin: 3750, expMax: 5000, emoji: "🦕", label: "Crecido", description: "3750+ EXP" }
+                  ].map((stage, index) => {
+                    // Determinar el estado de la etapa basado en EXP
+                    const isCompleted = totalExp > stage.expMax;
+                    const isActive = totalExp >= stage.expMin && totalExp <= stage.expMax;
+                    const isPending = totalExp < stage.expMin;
+                    
+                    return (
+                      <div key={stage.expMin} className="flex flex-col items-center">
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 1 + index * 0.1, duration: 0.3 }}
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-2xl sm:text-3xl mb-2 transition-all duration-500 ${
+                            isCompleted
+                              ? 'bg-green-500 text-white shadow-lg scale-105 ring-2 ring-green-300'
+                              : isActive
+                              ? 'bg-primary text-primary-foreground shadow-xl scale-110 ring-4 ring-primary/50 animate-pulse'
+                              : 'bg-muted text-muted-foreground opacity-50'
+                          }`}
+                        >
+                          {stage.emoji}
+                        </motion.div>
+                        
+                        <span className={`text-xs sm:text-sm font-bold text-center mb-1 ${
+                          isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                        }`}>
+                          {stage.label}
+                        </span>
+                        
+                        <span className="text-[10px] sm:text-xs text-muted-foreground text-center leading-tight">
+                          {stage.description}
+                        </span>
+                        
+                        {/* Estado visual */}
+                        {isCompleted && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="text-[10px] sm:text-xs text-green-600 font-bold mt-1"
+                          >
+                            ✓ Completado
+                          </motion.span>
+                        )}
+                        {isActive && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="text-[10px] sm:text-xs text-primary font-bold mt-1"
+                          >
+                            • Actual
+                          </motion.span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Barra de progreso general por EXP */}
+                <div className="mt-6 pt-4 border-t border-primary/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+                      Progreso Total
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-primary">
+                      {totalExp} / 5000 EXP
+                    </span>
+                  </div>
+                  <Progress value={(totalExp / 5000) * 100} className="h-2 sm:h-3" />
                 </div>
               </CardContent>
             </Card>
@@ -262,16 +307,16 @@ const StudentProgressProfile = ({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.2, duration: 0.5 }}
-            className="text-center p-6 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-2xl border border-primary/30"
+            className="text-center p-4 sm:p-6 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-2xl border border-primary/30"
           >
-            <h4 className="font-bold text-lg text-primary mb-2">
-              {overallProgress < 25 && "¡Comienza tu aventura de aprendizaje! 🚀"}
-              {overallProgress >= 25 && overallProgress < 50 && "¡Excelente progreso! Sigue así 💪"}
-              {overallProgress >= 50 && overallProgress < 75 && "¡Increíble! Tu personaje está creciendo 🌟"}
-              {overallProgress >= 75 && "¡Eres increíble! Tu personaje ha evolucionado completamente 🎊"}
+            <h4 className="font-bold text-base sm:text-lg text-primary mb-2">
+              {totalExp < 1250 && "¡Comienza tu aventura de aprendizaje! 🚀"}
+              {totalExp >= 1250 && totalExp < 2500 && "¡Excelente progreso! Tu personaje está rompiendo el cascarón 💪"}
+              {totalExp >= 2500 && totalExp < 3750 && "¡Increíble! Tu personaje está naciendo 🌟"}
+              {totalExp >= 3750 && "¡Eres increíble! Tu dinosaurio ha crecido completamente 🦕🎊"}
             </h4>
-            <p className="text-muted-foreground">
-              Cada lección completada hace que tu personaje crezca y evolucione. 
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Cada lección completada te da EXP y hace que tu personaje crezca y evolucione. 
               ¡Continúa aprendiendo para desbloquear nuevas etapas!
             </p>
           </motion.div>
