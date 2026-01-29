@@ -52,12 +52,12 @@ export const RankingTab = ({
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/20 to-yellow-500/20 rounded-full mb-4">
           <Trophy className="w-5 h-5 text-accent" />
-          <span className="font-semibold text-accent-foreground">Ranking Semanal</span>
+          <span className="font-semibold text-accent-foreground">Ranking por EXP Total</span>
         </div>
         
         {/* User's Position Summary */}
         <div className="bg-card rounded-3xl p-6 border border-border shadow-lg">
-          <p className="text-muted-foreground mb-2">Tu posición esta semana</p>
+          <p className="text-muted-foreground mb-2">Tu posición actual</p>
           <div className="flex items-center justify-center gap-4">
             <span className="text-5xl font-bold text-primary">#{userPosition}</span>
             <div className="text-left">
@@ -104,7 +104,7 @@ export const RankingTab = ({
             <p className="font-semibold text-sm text-center max-w-[80px] truncate">{top3[1].name}</p>
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Gem className="w-3 h-3 text-primary" />
-              {top3[1].exp}
+              <span>{top3[1].exp} EXP</span>
             </div>
             <div className="w-20 h-24 bg-gradient-to-t from-gray-400 to-gray-300 rounded-t-lg mt-2 flex items-center justify-center">
               <span className="text-white font-bold text-2xl">2</span>
@@ -127,7 +127,7 @@ export const RankingTab = ({
             <p className="font-bold text-center max-w-[100px] truncate">{top3[0].name}</p>
             <div className="flex items-center gap-1 text-sm font-medium text-primary">
               <Gem className="w-4 h-4" />
-              {top3[0].exp}
+              <span>{top3[0].exp} EXP</span>
             </div>
             <div className="w-24 h-32 bg-gradient-to-t from-yellow-500 to-amber-400 rounded-t-lg mt-2 flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-3xl">1</span>
@@ -150,7 +150,7 @@ export const RankingTab = ({
             <p className="font-semibold text-sm text-center max-w-[80px] truncate">{top3[2].name}</p>
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Gem className="w-3 h-3 text-primary" />
-              {top3[2].exp}
+              <span>{top3[2].exp} EXP</span>
             </div>
             <div className="w-20 h-20 bg-gradient-to-t from-amber-700 to-amber-600 rounded-t-lg mt-2 flex items-center justify-center">
               <span className="text-white font-bold text-2xl">3</span>
@@ -192,7 +192,7 @@ export const RankingTab = ({
               {getTrendIcon(entry.trend)}
               <div className="flex items-center gap-1 font-bold text-foreground">
                 <Gem className="w-4 h-4 text-primary" />
-                {entry.exp}
+                <span>{entry.exp} EXP</span>
               </div>
             </div>
           </div>

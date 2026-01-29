@@ -227,11 +227,11 @@ for (let w = 4; w <= 8; w++) {
   });
 }
 
-const mockRankings = [
+// Mock rankings base (sin el usuario actual)
+const mockRankingsBase = [
   { position: 1, name: "Ana Martínez", exp: 2450, trend: "same" as const },
   { position: 2, name: "Luis García", exp: 2380, trend: "up" as const },
   { position: 3, name: "María Fernández", exp: 2310, trend: "down" as const },
-  { position: 4, name: "Carlos Rodríguez", exp: 2250, isCurrentUser: true, trend: "up" as const },
   { position: 5, name: "Pedro Sánchez", exp: 2180, trend: "down" as const },
   { position: 6, name: "Laura Díaz", exp: 2100, trend: "up" as const },
   { position: 7, name: "Jorge Ruiz", exp: 2050, trend: "same" as const },
@@ -263,7 +263,7 @@ const StudentDashboard = () => {
   // Gamification stats (removed lives)
   const [stats, setStats] = useState({
     currentStreak: 7,
-    gems: 2000,
+    gems: 2500,
   });
 
   // Calculate overall progress
@@ -305,6 +305,38 @@ const StudentDashboard = () => {
       return completed + week.lessons.filter(lesson => lesson.isCompleted).length;
     }, 0);
   }, []);
+
+  // Calcular ranking dinámico con EXP real del usuario
+  const { rankings: mockRankings, userPosition } = useMemo(() => {
+    if (!user) {
+      return { rankings: mockRankingsBase, userPosition: 4 };
+    }
+
+    // Crear entrada del usuario actual con EXP real
+    const currentUserEntry = {
+      name: user.name,
+      exp: stats.gems, // EXP real del estado
+      isCurrentUser: true as const,
+      trend: "up" as const,
+    };
+
+    // Combinar usuario actual con otros rankings
+    const allRankings = [...mockRankingsBase, currentUserEntry];
+
+    // Ordenar por EXP descendente
+    allRankings.sort((a, b) => b.exp - a.exp);
+
+    // Asignar posiciones
+    const rankedList = allRankings.map((entry, index) => ({
+      ...entry,
+      position: index + 1,
+    }));
+
+    // Encontrar posición del usuario (buscar el que tenga isCurrentUser = true)
+    const userPos = rankedList.findIndex(entry => 'isCurrentUser' in entry && entry.isCurrentUser) + 1;
+
+    return { rankings: rankedList, userPosition: userPos };
+  }, [user, stats.gems]);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -426,7 +458,7 @@ const StudentDashboard = () => {
           <div className="pb-24 lg:pb-8">
             <RankingTab
               rankings={mockRankings}
-              userPosition={4}
+              userPosition={userPosition}
               userPreviousPosition={6}
               totalStudents={45}
             />
