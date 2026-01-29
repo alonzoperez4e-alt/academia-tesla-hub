@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { format, startOfWeek, addDays } from "date-fns";
+import { es } from "date-fns/locale";
 import { 
   CheckCircle2, 
   XCircle, 
@@ -8,7 +10,7 @@ import {
   Lightbulb, 
   Target,
   TrendingUp,
-  Calendar,
+  Calendar as CalendarIcon,
   Award,
   Construction,
   Flame,
@@ -24,6 +26,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface UserData {
   code: string;
@@ -54,6 +62,43 @@ const mockStudentData = {
   gems: 1850,
 };
 
+// Historical attendance data (mock) - Using 2026 dates
+const attendanceHistory: Record<string, boolean> = {
+  // Week of Jan 19-25, 2026
+  "2026-01-19": true,
+  "2026-01-20": true,
+  "2026-01-21": false,
+  "2026-01-22": true,
+  "2026-01-23": true,
+  "2026-01-24": false,
+  "2026-01-25": false,
+  // Week of Jan 26 - Feb 1, 2026
+  "2026-01-26": true,
+  "2026-01-27": true,
+  "2026-01-28": true,
+  "2026-01-29": false,
+  "2026-01-30": true,
+  "2026-01-31": false,
+  "2026-02-01": false,
+  // Previous weeks
+  "2026-01-12": true,
+  "2026-01-13": true,
+  "2026-01-14": false,
+  "2026-01-15": true,
+  "2026-01-16": true,
+  "2026-01-17": false,
+  "2026-01-18": false,
+};
+
+// Historical exams data (mock) - Using 2026 dates
+const examHistory: Record<string, { name: string; score: number }> = {
+  "2026-01-06": { name: "Comunicación - Semana 1", score: 90 },
+  "2026-01-13": { name: "Comunicación - Semana 2", score: 78 },
+  "2026-01-20": { name: "Comunicación - Semana 3", score: 85 },
+  "2026-01-27": { name: "Comunicación - Semana 4", score: 82 },
+  "2026-01-28": { name: "Comunicación - Simulacro", score: 88 },
+};
+
 // Simplified path for parent view
 const mockStudentPath = [
   { week: 1, title: "Fundamentos", completed: 4, total: 4, isUnlocked: true },
@@ -77,6 +122,45 @@ const ParentDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"progreso" | "camino">("progreso");
   const [user, setUser] = useState<UserData | null>(null);
+  
+  // Date picker states - examDate defaults to today for real-time display
+  const [attendanceDate, setAttendanceDate] = useState<Date>(new Date());
+  const [examDate, setExamDate] = useState<Date>(new Date());
+  const [showAttendanceCalendar, setShowAttendanceCalendar] = useState(false);
+  const [showExamCalendar, setShowExamCalendar] = useState(false);
+  
+  // Get the week (Monday to Sunday) for a given date
+  const getWeekDays = (date: Date): Date[] => {
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Monday = 1
+    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  };
+  
+  // Get attendance for the selected week
+  const weeklyAttendance = useMemo(() => {
+    const weekDays = getWeekDays(attendanceDate);
+    return weekDays.map(day => {
+      const dateKey = format(day, "yyyy-MM-dd");
+      return {
+        date: day,
+        attended: attendanceHistory[dateKey] ?? null
+      };
+    });
+  }, [attendanceDate]);
+  
+  // Get attendance for selected date (for the main display)
+  const getAttendanceForDate = (date: Date): boolean | null => {
+    const dateKey = format(date, "yyyy-MM-dd");
+    return attendanceHistory[dateKey] ?? null;
+  };
+  
+  // Get exam for selected date
+  const getExamForDate = (date: Date): { name: string; score: number } | null => {
+    const dateKey = format(date, "yyyy-MM-dd");
+    return examHistory[dateKey] ?? null;
+  };
+  
+  const selectedAttendance = getAttendanceForDate(attendanceDate);
+  const selectedExam = getExamForDate(examDate);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -141,14 +225,37 @@ const ParentDashboard = () => {
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {/* Today's Attendance */}
+        {/* Attendance with Date Picker */}
         <div className="bg-card rounded-3xl p-6 border border-border shadow-lg">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">Asistencia de Hoy</h3>
-            <Calendar className="w-5 h-5 text-muted-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Asistencia</h3>
+            <Popover open={showAttendanceCalendar} onOpenChange={setShowAttendanceCalendar}>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 transition-all">
+                  <CalendarIcon className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">
+                    {format(attendanceDate, "dd MMM", { locale: es })}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={attendanceDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setAttendanceDate(date);
+                      setShowAttendanceCalendar(false);
+                    }
+                  }}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex items-center gap-4">
-            {mockStudentData.attendanceToday ? (
+            {selectedAttendance === true ? (
               <>
                 <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
                   <CheckCircle2 className="w-8 h-8 text-success" />
@@ -158,31 +265,48 @@ const ParentDashboard = () => {
                   <p className="text-sm text-muted-foreground">Asistió a clases</p>
                 </div>
               </>
-            ) : (
+            ) : selectedAttendance === false ? (
               <>
                 <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
                   <XCircle className="w-8 h-8 text-destructive" />
                 </div>
                 <div>
                   <p className="text-xl font-bold text-destructive">Ausente</p>
-                  <p className="text-sm text-muted-foreground">No asistió</p>
+                  <p className="text-sm text-muted-foreground">No asistió a clases</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                  <CalendarIcon className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-muted-foreground">Sin registro</p>
+                  <p className="text-sm text-muted-foreground">No hay datos para esta fecha</p>
                 </div>
               </>
             )}
           </div>
-          {/* Weekly Attendance */}
+          {/* Weekly Attendance for selected week */}
           <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground mb-2">Asistencia semanal</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Semana del {format(startOfWeek(attendanceDate, { weekStartsOn: 1 }), "dd MMM", { locale: es })} al {format(addDays(startOfWeek(attendanceDate, { weekStartsOn: 1 }), 6), "dd MMM", { locale: es })}
+            </p>
             <div className="flex gap-2">
-              {mockStudentData.weeklyAttendance.map((attended, index) => (
+              {weeklyAttendance.map((day, index) => (
                 <div
                   key={index}
                   className={cn(
-                    "w-8 h-8 rounded-xl flex items-center justify-center text-xs font-medium transition-all",
-                    attended
+                    "w-8 h-8 rounded-xl flex items-center justify-center text-xs font-medium transition-all cursor-default",
+                    day.attended === true
                       ? "bg-success text-white shadow-md"
+                      : day.attended === false
+                      ? "bg-destructive text-white shadow-md"
                       : "bg-secondary text-muted-foreground"
                   )}
+                  title={`${format(day.date, "EEEE dd", { locale: es })}: ${
+                    day.attended === true ? "Presente" : day.attended === false ? "Ausente" : "Sin registro"
+                  }`}
                 >
                   {daysOfWeek[index]}
                 </div>
@@ -191,62 +315,99 @@ const ParentDashboard = () => {
           </div>
         </div>
 
-        {/* Last Exam Score */}
+        {/* Exam Score with Date Picker */}
         <div className="bg-card rounded-3xl p-6 border border-border shadow-lg">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">Último Examen</h3>
-            <ClipboardCheck className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative w-20 h-20">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="none"
-                  className="text-secondary"
+            <h3 className="text-lg font-semibold text-foreground">Examen</h3>
+            <Popover open={showExamCalendar} onOpenChange={setShowExamCalendar}>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 transition-all">
+                  <CalendarIcon className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">
+                    {format(examDate, "dd MMM", { locale: es })}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={examDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setExamDate(date);
+                      setShowExamCalendar(false);
+                    }
+                  }}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
                 />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeDasharray={`${mockStudentData.lastExamScore * 2.26} 226`}
-                  strokeLinecap="round"
-                  className={cn(
-                    mockStudentData.lastExamScore >= 70 ? "text-success" : "text-destructive"
-                  )}
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-foreground">
-                {mockStudentData.lastExamScore}
-              </span>
-            </div>
-            <div>
-              <p className={cn(
-                "text-lg font-bold",
-                mockStudentData.lastExamScore >= 70 ? "text-success" : "text-destructive"
-              )}>
-                {mockStudentData.lastExamScore >= 90 ? "Excelente" :
-                 mockStudentData.lastExamScore >= 70 ? "Aprobado" : "Necesita mejorar"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {mockStudentData.lastExamDate}
-              </p>
-            </div>
+              </PopoverContent>
+            </Popover>
           </div>
-          {/* Trend */}
-          <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-success" />
-            <span className="text-sm text-muted-foreground">
-              +7 puntos respecto al examen anterior
-            </span>
-          </div>
+          {selectedExam ? (
+            <>
+              <div className="flex items-center gap-4">
+                <div className="relative w-20 h-20">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      className="text-secondary"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${selectedExam.score * 2.26} 226`}
+                      strokeLinecap="round"
+                      className={cn(
+                        selectedExam.score >= 70 ? "text-success" : "text-destructive"
+                      )}
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-foreground">
+                    {selectedExam.score}
+                  </span>
+                </div>
+                <div>
+                  <p className={cn(
+                    "text-lg font-bold",
+                    selectedExam.score >= 70 ? "text-success" : "text-destructive"
+                  )}>
+                    {selectedExam.score >= 90 ? "Excelente" :
+                     selectedExam.score >= 70 ? "Aprobado" : "Necesita mejorar"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedExam.name}
+                  </p>
+                </div>
+              </div>
+              {/* Trend */}
+              <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-success" />
+                <span className="text-sm text-muted-foreground">
+                  Ver historial completo abajo
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                <ClipboardCheck className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-muted-foreground">Sin examen</p>
+                <p className="text-sm text-muted-foreground">No hay examen registrado para esta fecha</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Skills in Development */}
