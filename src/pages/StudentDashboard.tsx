@@ -263,7 +263,7 @@ const StudentDashboard = () => {
   // Gamification stats (removed lives)
   const [stats, setStats] = useState({
     currentStreak: 7,
-    gems: 2250,
+    gems: 2499,
   });
 
   // Calculate overall progress
@@ -275,6 +275,26 @@ const StudentDashboard = () => {
     
     return Math.round((completedLessons / totalLessons) * 100);
   }, []);
+
+  // Calculate dinosaur progress based on EXP
+  // 0-1249 EXP = 0-24% (egg), 1250-2499 = 25-49% (cracking), 
+  // 2500-3749 = 50-74% (hatching), 3750-5000 = 75-100% (grown)
+  const dinosaurProgress = useMemo(() => {
+    const exp = stats.gems;
+    if (exp < 1250) {
+      // 0-1249 EXP = 0-24% (never reaches 25)
+      return Math.floor((exp / 1250) * 25);
+    } else if (exp < 2500) {
+      // 1250-2499 EXP = 25-49% (never reaches 50)
+      return 25 + Math.floor(((exp - 1250) / 1250) * 25);
+    } else if (exp < 3750) {
+      // 2500-3749 EXP = 50-74% (never reaches 75)
+      return 50 + Math.floor(((exp - 2500) / 1250) * 25);
+    } else {
+      // 3750-5000 EXP = 75-100%
+      return Math.min(75 + Math.floor(((exp - 3750) / 1250) * 25), 100);
+    }
+  }, [stats.gems]);
 
   const totalLessons = useMemo(() => {
     return mockWeekSections.reduce((total, week) => total + week.lessons.length, 0);
@@ -378,17 +398,17 @@ const StudentDashboard = () => {
     switch (activeTab) {
       case "path":
         return (
-          <div className="pb-24 lg:pb-8">
+          <div className="pb-24 lg:pb-8 px-4 max-w-7xl mx-auto">
             {/* Overall Progress Character - Show on top of path */}
-            <div className="flex justify-center py-6">
+            <div className="flex justify-center items-center py-6 w-full">
               <div className="text-center">
                 <StudentCharacter3D 
-                  progress={overallProgress} 
+                  progress={dinosaurProgress} 
                   size="md"
                   showProgressText={true}
                 />
                 <div className="mt-2 text-sm font-medium text-muted-foreground">
-                  Tu progreso general: {completedLessons}/{totalLessons} lecciones
+                  Crecimiento del dinosaurio: {Math.round(dinosaurProgress)}% ({stats.gems} EXP)
                 </div>
               </div>
             </div>
@@ -419,6 +439,7 @@ const StudentDashboard = () => {
             <StudentProgressProfile
               userName={user.name.split(" ")[0]}
               overallProgress={overallProgress}
+              dinosaurProgress={dinosaurProgress}
               completedLessons={completedLessons}
               totalLessons={totalLessons}
               currentStreak={stats.currentStreak}
@@ -505,6 +526,7 @@ const StudentDashboard = () => {
           <StudentMiniProfile
             userName={user.name.split(" ")[0]}
             overallProgress={overallProgress}
+            dinosaurProgress={dinosaurProgress}
             currentExp={stats.gems}
           />
           

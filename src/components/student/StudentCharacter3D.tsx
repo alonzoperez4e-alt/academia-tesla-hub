@@ -16,6 +16,7 @@ const StudentCharacter3D = ({
 }: StudentCharacter3DProps) => {
   
   // Determine stage based on progress
+  // 0-24% = egg, 25-49% = cracking, 50-74% = hatching, 75-100% = grown
   const stage = useMemo(() => {
     if (progress < 25) return 'egg';
     if (progress < 50) return 'cracking';
@@ -416,8 +417,8 @@ const StudentCharacter3D = ({
   };
 
   return (
-    <div className={`inline-block ${className}`}>
-      <div style={{ transform: `scale(${scale})` }}>
+    <div className={`flex flex-col items-center ${className}`}>
+      <div style={{ transform: `scale(${scale})` }} className="flex justify-center">
         <svg
           width={width}
           height={height}
@@ -442,16 +443,16 @@ const StudentCharacter3D = ({
             
             {/* Character body gradient */}
             <radialGradient id="characterBody" cx="0.25" cy="0.2" r="0.85">
-              <stop offset="0%" stopColor="#FFE7EA" />
-              <stop offset="50%" stopColor="#FFCCD5" />
-              <stop offset="100%" stopColor="#FF8FA3" />
+              <stop offset="0%" stopColor="#90EE90" />
+              <stop offset="50%" stopColor="#32CD32" />
+              <stop offset="100%" stopColor="#228B22" />
             </radialGradient>
             
             {/* Character head gradient */}
             <radialGradient id="characterHead" cx="0.25" cy="0.15" r="0.9">
-              <stop offset="0%" stopColor="#FFF0F5" />
-              <stop offset="50%" stopColor="#FFE7EA" />
-              <stop offset="100%" stopColor="#FFCCD5" />
+              <stop offset="0%" stopColor="#98FB98" />
+              <stop offset="50%" stopColor="#90EE90" />
+              <stop offset="100%" stopColor="#32CD32" />
             </radialGradient>
             
             {/* Shell fragment gradient */}
@@ -505,7 +506,7 @@ const StudentCharacter3D = ({
           className="text-center mt-3"
         >
           <div className="text-sm font-bold text-primary mb-1">
-            {progress}% Completado
+            {Math.round(progress)}% Completado
           </div>
           <div className="text-xs text-muted-foreground">
             {getMotivationalMessage()}

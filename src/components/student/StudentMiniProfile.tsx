@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 interface StudentMiniProfileProps {
   userName: string;
   overallProgress: number;
+  dinosaurProgress: number;
   currentExp: number;
   className?: string;
 }
@@ -12,6 +13,7 @@ interface StudentMiniProfileProps {
 const StudentMiniProfile = ({
   userName,
   overallProgress,
+  dinosaurProgress,
   currentExp,
   className = ''
 }: StudentMiniProfileProps) => {
@@ -36,7 +38,7 @@ const StudentMiniProfile = ({
       {/* Mini Character */}
       <div className="relative">
         <StudentCharacter3D 
-          progress={overallProgress} 
+          progress={dinosaurProgress} 
           size="sm"
           showProgressText={false}
         />

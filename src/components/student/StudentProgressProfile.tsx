@@ -8,6 +8,7 @@ import { Trophy, Target, TrendingUp, Star } from 'lucide-react';
 interface StudentProgressProfileProps {
   userName: string;
   overallProgress: number;
+  dinosaurProgress: number;
   completedLessons: number;
   totalLessons: number;
   currentStreak: number;
@@ -18,6 +19,7 @@ interface StudentProgressProfileProps {
 const StudentProgressProfile = ({
   userName,
   overallProgress,
+  dinosaurProgress,
   completedLessons,
   totalLessons,
   currentStreak,
@@ -77,7 +79,7 @@ const StudentProgressProfile = ({
           >
             <div className="relative">
               <StudentCharacter3D 
-                progress={overallProgress} 
+                progress={dinosaurProgress} 
                 size="lg"
                 showProgressText={true}
               />
