@@ -31,18 +31,20 @@ export const LearningPath = ({ weeks, currentWeek, onNodeClick }: LearningPathPr
   return (
     <div className="relative py-8 px-4">
       {weeks.map((weekSection, weekIndex) => (
-        <div key={weekSection.week} className="relative mb-12">
-          {/* Week Header */}
+        <div key={weekSection.week} className="relative mb-16">
+          {/* Week Header - con background y espaciado mejorado */}
           <div className={cn(
-            "flex items-center justify-center gap-3 mb-8 sticky top-20 z-10",
+            "flex items-center justify-center gap-3 mb-12 sticky top-20 z-30 py-2",
             !weekSection.isUnlocked && "opacity-50"
           )}>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
             <div className={cn(
-              "flex items-center gap-2 px-6 py-3 rounded-full font-bold text-lg shadow-lg transition-all",
+              "relative flex items-center gap-2 px-6 py-3 rounded-full font-bold text-lg shadow-lg transition-all",
               weekSection.isUnlocked
                 ? "bg-gradient-to-r from-primary to-tesla-blue-light text-white"
-                : "bg-muted text-muted-foreground"
+                : "bg-muted text-muted-foreground",
+              // Background sólido para evitar transparencias
+              "before:absolute before:inset-0 before:-z-10 before:bg-background before:blur-md before:opacity-90"
             )}>
               {!weekSection.isUnlocked && <Lock className="w-4 h-4" />}
               <span>Semana {weekSection.week}</span>
@@ -125,7 +127,7 @@ export const LearningPath = ({ weeks, currentWeek, onNodeClick }: LearningPathPr
                     onClick={() => !lesson.isLocked && onNodeClick(lesson.id, weekSection.week)}
                     disabled={lesson.isLocked}
                     className={cn(
-                      "relative z-10 w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center transition-all duration-300",
+                      "relative z-20 w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center transition-all duration-300",
                       "bg-gradient-to-br shadow-lg",
                       lesson.isLocked
                         ? "from-muted to-muted/80 cursor-not-allowed"
