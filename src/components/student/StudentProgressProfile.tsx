@@ -227,7 +227,7 @@ const StudentProgressProfile = ({
                   {[
                     { expMin: 0, expMax: 1249, emoji: "🥚", label: "Huevo", description: "0-1249 EXP" },
                     { expMin: 1250, expMax: 2499, emoji: "🐣", label: "Rompiendo", description: "1250-2499 EXP" },
-                    { expMin: 2500, expMax: 3749, emoji: "🦖", label: "Naciendo", description: "2500-3749 EXP" },
+                    { expMin: 2500, expMax: 3749, emoji: "🦖", label: "Creciendo", description: "2500-3749 EXP" },
                     { expMin: 3750, expMax: 5000, emoji: "🦕", label: "Grande", description: "3750+ EXP" }
                   ].map((stage, index) => {
                     // Determinar el estado de la etapa basado en EXP

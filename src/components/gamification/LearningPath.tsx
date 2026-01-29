@@ -29,31 +29,34 @@ interface LearningPathProps {
 
 export const LearningPath = ({ weeks, currentWeek, onNodeClick }: LearningPathProps) => {
   return (
-    <div className="relative py-8 px-4">
+    <div className="relative py-8 px-4 pt-4">
       {weeks.map((weekSection, weekIndex) => (
-        <div key={weekSection.week} className="relative mb-16">
-          {/* Week Header - con background y espaciado mejorado */}
+        <div key={weekSection.week} className="relative mb-20" style={{ 
+          position: 'relative',
+          isolation: 'isolate'
+        }}>
+          {/* ====== WEEK HEADER (Independiente del timeline) ====== */}
           <div className={cn(
-            "flex items-center justify-center gap-3 mb-12 sticky top-20 z-30 py-2",
+            "week-header mb-10 sm:mb-14 pb-6 sm:pb-8",
             !weekSection.isUnlocked && "opacity-50"
           )}>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-            <div className={cn(
-              "relative flex items-center gap-2 px-6 py-3 rounded-full font-bold text-lg shadow-lg transition-all",
-              weekSection.isUnlocked
-                ? "bg-gradient-to-r from-primary to-tesla-blue-light text-white"
-                : "bg-muted text-muted-foreground",
-              // Background sólido para evitar transparencias
-              "before:absolute before:inset-0 before:-z-10 before:bg-background before:blur-md before:opacity-90"
-            )}>
-              {!weekSection.isUnlocked && <Lock className="w-4 h-4" />}
-              <span>Semana {weekSection.week}</span>
+            <div className="flex items-center justify-center gap-2 sm:gap-3 sticky top-[7rem] sm:top-24 z-10 py-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+              <div className={cn(
+                "relative flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-bold text-sm sm:text-base md:text-lg shadow-lg transition-all whitespace-nowrap backdrop-blur-sm",
+                weekSection.isUnlocked
+                  ? "bg-gradient-to-r from-primary to-tesla-blue-light text-white"
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {!weekSection.isUnlocked && <Lock className="w-4 h-4" />}
+                <span>Semana {weekSection.week}</span>
+              </div>
+              <div className="h-px flex-1 bg-gradient-to-r from-border via-transparent to-transparent" />
             </div>
-            <div className="h-px flex-1 bg-gradient-to-r from-border via-transparent to-transparent" />
           </div>
 
-          {/* Lesson Nodes */}
-          <div className="relative max-w-md mx-auto">
+          {/* ====== WEEK TIMELINE (Separado del header) ====== */}
+          <div className="week-timeline relative max-w-md mx-auto pt-8 sm:pt-12">
             {/* Connecting Line */}
             <div className={cn(
               "absolute left-1/2 top-0 bottom-0 w-1 -translate-x-1/2 rounded-full",
