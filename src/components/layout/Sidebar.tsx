@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, FileText, Library, Users, Upload, Settings, LogOut, Zap, Menu, X, MessageSquare, ClipboardList, TrendingUp, Bell, Unlock } from "lucide-react";
+import { BookOpen, Calendar, FileText, Library, Users, Settings, LogOut, Zap, Menu, X, ClipboardList, TrendingUp, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,16 +13,14 @@ interface SidebarProps {
 }
 
 const studentMenuItems = [
-  { id: "comunicacion", label: "Comunicación", icon: MessageSquare, enabled: true },
+  { id: "comunicacion", label: "Comunicación", icon: BookOpen, enabled: true },
   { id: "horario", label: "Horario", icon: Calendar, enabled: false },
   { id: "simulacros", label: "Simulacros", icon: FileText, enabled: false },
   { id: "biblioteca", label: "Biblioteca", icon: Library, enabled: false },
 ];
 
 const adminMenuItems = [
-  { id: "material", label: "Subir Material", icon: Upload, enabled: true },
-  { id: "preguntas", label: "Gestionar Preguntas", icon: ClipboardList, enabled: true },
-  { id: "semanas", label: "Desbloquear Semanas", icon: Unlock, enabled: true },
+  { id: "cuestionarios", label: "Gestionar Cuestionarios", icon: ClipboardList, enabled: true },
   { id: "alumnos", label: "Gestionar Alumnos", icon: Users, enabled: false },
   { id: "configuracion", label: "Configuración", icon: Settings, enabled: false },
 ];

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flame, Gem, Heart, Zap, ChevronDown, Search, MessageSquare, Calculator, Atom, FlaskConical, Brain } from "lucide-react";
+import { Flame, Gem, ChevronDown, Search, MessageSquare, Calculator, Atom, FlaskConical, Brain, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
@@ -8,6 +8,7 @@ interface Course {
   name: string;
   icon: "comunicacion" | "matematica" | "fisica" | "quimica" | "razonamiento";
   color: string;
+  isEnabled: boolean;
 }
 
 interface GamifiedStatusBarProps {
@@ -15,8 +16,6 @@ interface GamifiedStatusBarProps {
   userCode: string;
   currentStreak: number;
   gems: number;
-  lives: number;
-  maxLives: number;
   selectedCourse: string;
   onCourseChange: (courseId: string) => void;
   searchValue: string;
@@ -24,11 +23,11 @@ interface GamifiedStatusBarProps {
 }
 
 const courses: Course[] = [
-  { id: "comunicacion", name: "Comunicación", icon: "comunicacion", color: "from-purple-500 to-purple-600" },
-  { id: "matematica", name: "Matemáticas", icon: "matematica", color: "from-blue-500 to-blue-600" },
-  { id: "fisica", name: "Física", icon: "fisica", color: "from-cyan-500 to-cyan-600" },
-  { id: "quimica", name: "Química", icon: "quimica", color: "from-green-500 to-green-600" },
-  { id: "razonamiento", name: "Razonamiento", icon: "razonamiento", color: "from-orange-500 to-orange-600" },
+  { id: "comunicacion", name: "Comunicación", icon: "comunicacion", color: "from-purple-500 to-purple-600", isEnabled: true },
+  { id: "matematica", name: "Matemáticas", icon: "matematica", color: "from-blue-500 to-blue-600", isEnabled: false },
+  { id: "fisica", name: "Física", icon: "fisica", color: "from-cyan-500 to-cyan-600", isEnabled: false },
+  { id: "quimica", name: "Química", icon: "quimica", color: "from-green-500 to-green-600", isEnabled: false },
+  { id: "razonamiento", name: "Razonamiento", icon: "razonamiento", color: "from-orange-500 to-orange-600", isEnabled: false },
 ];
 
 const iconMap = {
@@ -44,8 +43,6 @@ export const GamifiedStatusBar = ({
   userCode,
   currentStreak,
   gems,
-  lives,
-  maxLives,
   selectedCourse,
   onCourseChange,
   searchValue,
@@ -85,7 +82,7 @@ export const GamifiedStatusBar = ({
                 className="fixed inset-0 z-10" 
                 onClick={() => setShowCourseMenu(false)} 
               />
-              <div className="absolute top-full left-0 mt-2 bg-card rounded-2xl shadow-xl border border-border p-2 z-20 min-w-[200px] animate-scale-in">
+              <div className="absolute top-full left-0 mt-2 bg-card rounded-2xl shadow-xl border border-border p-2 z-20 min-w-[220px] animate-scale-in">
                 <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Seleccionar Curso
                 </p>
@@ -103,18 +100,30 @@ export const GamifiedStatusBar = ({
                         "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
                         isActive 
                           ? "bg-primary/10 text-primary" 
-                          : "hover:bg-secondary text-foreground"
+                          : course.isEnabled
+                          ? "hover:bg-secondary text-foreground"
+                          : "opacity-60 text-muted-foreground"
                       )}
                     >
                       <div className={cn(
-                        "w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-md",
+                        "w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-md relative",
                         course.color
                       )}>
                         <Icon className="w-5 h-5 text-white" />
+                        {!course.isEnabled && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-muted rounded-full flex items-center justify-center border-2 border-card">
+                            <Lock className="w-3 h-3 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
-                      <span className="font-medium">{course.name}</span>
+                      <div className="flex-1 text-left">
+                        <span className="font-medium">{course.name}</span>
+                        {!course.isEnabled && (
+                          <p className="text-xs text-muted-foreground">Próximamente</p>
+                        )}
+                      </div>
                       {isActive && (
-                        <div className="ml-auto w-2 h-2 rounded-full bg-primary" />
+                        <div className="w-2 h-2 rounded-full bg-primary" />
                       )}
                     </button>
                   );
@@ -124,7 +133,7 @@ export const GamifiedStatusBar = ({
           )}
         </div>
 
-        {/* Gamification Counters */}
+        {/* Gamification Counters (without lives) */}
         <div className="flex items-center gap-2 lg:gap-4">
           {/* Streak */}
           <div className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-2xl border border-orange-500/20">
@@ -139,12 +148,6 @@ export const GamifiedStatusBar = ({
           <div className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-2xl border border-primary/20">
             <Gem className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />
             <span className="font-bold text-sm lg:text-base text-primary">{gems}</span>
-          </div>
-
-          {/* Lives */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 bg-gradient-to-r from-red-500/10 to-pink-500/10 rounded-2xl border border-red-500/20">
-            <Heart className="w-5 h-5 lg:w-6 lg:h-6 text-red-500 fill-red-500" />
-            <span className="font-bold text-sm lg:text-base text-red-600">{lives}/{maxLives}</span>
           </div>
 
           {/* Search (Desktop only) */}

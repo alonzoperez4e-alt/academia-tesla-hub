@@ -1,75 +1,154 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
-import { MaterialTable } from "@/components/admin/MaterialTable";
-import { UploadModal } from "@/components/admin/UploadModal";
-import { QuestionUploadModal } from "@/components/admin/QuestionUploadModal";
-import { QuestionTable } from "@/components/admin/QuestionTable";
-import { Button } from "@/components/ui/button";
-import { Upload, Filter, FileText, Video, Users, BookOpen, Construction, Plus, MessageSquare, Unlock, Lock, Check } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { CourseSelector } from "@/components/admin/CourseSelector";
+import { WeekManager, Week, Lesson } from "@/components/admin/WeekManager";
+import { LessonFormModal } from "@/components/admin/LessonFormModal";
+import { WeekDetailsModal } from "@/components/admin/WeekDetailsModal";
+import { FileText, Users, BookOpen, Construction, MessageSquare, ClipboardList } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-const mockMaterials = [
-  { id: "1", name: "Introducción a la Cinemática", course: "Física", week: 1, type: "pdf" as const, uploadDate: "2024-01-15" },
-  { id: "2", name: "MRU - Teoría Completa", course: "Física", week: 2, type: "pdf" as const, uploadDate: "2024-01-16" },
-  { id: "3", name: "Solución de Ejercicios MRU", course: "Física", week: 2, type: "video" as const, uploadDate: "2024-01-17" },
-  { id: "4", name: "Tabla Periódica Moderna", course: "Química", week: 1, type: "pdf" as const, uploadDate: "2024-01-15" },
-  { id: "5", name: "Enlaces Químicos", course: "Química", week: 3, type: "pdf" as const, uploadDate: "2024-01-18" },
-  { id: "6", name: "Práctica de Álgebra", course: "Álgebra", week: 3, type: "pdf" as const, uploadDate: "2024-01-19" },
+// Mock courses data
+const mockCourses = [
+  { 
+    id: "comunicacion", 
+    name: "Comunicación", 
+    description: "Curso de comprensión lectora, redacción y análisis textual.",
+    icon: "comunicacion" as const, 
+    color: "from-purple-500 to-purple-600", 
+    isEnabled: true,
+    lessonsCount: 8,
+    questionsCount: 45,
+  },
+  { 
+    id: "matematica", 
+    name: "Matemáticas", 
+    description: "Álgebra, aritmética, geometría y trigonometría.",
+    icon: "matematica" as const, 
+    color: "from-blue-500 to-blue-600", 
+    isEnabled: false,
+    lessonsCount: 0,
+    questionsCount: 0,
+  },
+  { 
+    id: "fisica", 
+    name: "Física", 
+    description: "Mecánica, termodinámica, ondas y electromagnetismo.",
+    icon: "fisica" as const, 
+    color: "from-cyan-500 to-cyan-600", 
+    isEnabled: false,
+    lessonsCount: 0,
+    questionsCount: 0,
+  },
+  { 
+    id: "quimica", 
+    name: "Química", 
+    description: "Química general, orgánica e inorgánica.",
+    icon: "quimica" as const, 
+    color: "from-green-500 to-green-600", 
+    isEnabled: false,
+    lessonsCount: 0,
+    questionsCount: 0,
+  },
+  { 
+    id: "razonamiento", 
+    name: "Razonamiento", 
+    description: "Razonamiento verbal y matemático.",
+    icon: "razonamiento" as const, 
+    color: "from-orange-500 to-orange-600", 
+    isEnabled: false,
+    lessonsCount: 0,
+    questionsCount: 0,
+  },
 ];
 
-const mockQuestions = [
-  { 
-    id: "q1", 
-    text: "¿Cuál es el sinónimo de 'efímero'?", 
-    week: 1, 
-    options: ["Eterno", "Pasajero", "Sólido", "Firme"], 
-    correctAnswer: 1, 
-    createdAt: "2024-01-15" 
+// Initial mock weeks data
+const initialWeeksData: Record<string, Week[]> = {
+  comunicacion: [
+    { 
+      week: 1, 
+      isUnlocked: true, 
+      lessons: [
+        { 
+          id: "l1-1", 
+          name: "Comprensión Lectora I", 
+          description: "Técnicas fundamentales de lectura", 
+          questionsCount: 5 
+        },
+        { 
+          id: "l1-2", 
+          name: "Comprensión Lectora II", 
+          description: "Análisis de textos complejos", 
+          questionsCount: 5 
+        },
+      ] 
+    },
+    { 
+      week: 2, 
+      isUnlocked: true, 
+      lessons: [
+        { 
+          id: "l2-1", 
+          name: "Reglas Ortográficas", 
+          description: "Domina las reglas de ortografía", 
+          questionsCount: 4 
+        },
+        { 
+          id: "l2-2", 
+          name: "Práctica de Redacción", 
+          description: "Mejora tu escritura", 
+          questionsCount: 3 
+        },
+      ] 
+    },
+    { week: 3, isUnlocked: false, lessons: [] },
+    { week: 4, isUnlocked: false, lessons: [] },
+    { week: 5, isUnlocked: false, lessons: [] },
+    { week: 6, isUnlocked: false, lessons: [] },
+    { week: 7, isUnlocked: false, lessons: [] },
+    { week: 8, isUnlocked: false, lessons: [] },
+  ],
+};
+
+// Mock lesson details with full questions
+const mockLessonDetails: Record<string, {
+  id: string;
+  name: string;
+  description: string;
+  questions: Array<{
+    id: string;
+    text: string;
+    options: string[];
+    correctAnswer: number;
+    solutionText?: string;
+    solutionImage?: string;
+  }>;
+}> = {
+  "l1-1": {
+    id: "l1-1",
+    name: "Comprensión Lectora I",
+    description: "Técnicas fundamentales de lectura",
+    questions: [
+      { id: "q1", text: "¿Cuál es el sinónimo de 'efímero'?", options: ["Eterno", "Pasajero", "Sólido", "Firme"], correctAnswer: 1, solutionText: "Efímero significa pasajero, transitorio." },
+      { id: "q2", text: "El texto instructivo se caracteriza por:", options: ["Narrar hechos", "Dar órdenes o pasos", "Describir lugares", "Argumentar ideas"], correctAnswer: 1 },
+    ],
   },
-  { 
-    id: "q2", 
-    text: "Identifica el tipo de texto: 'La receta indica mezclar todos los ingredientes...'", 
-    week: 1, 
-    options: ["Narrativo", "Instructivo", "Descriptivo", "Argumentativo"], 
-    correctAnswer: 1, 
-    createdAt: "2024-01-16" 
+  "l1-2": {
+    id: "l1-2",
+    name: "Comprensión Lectora II",
+    description: "Análisis de textos complejos",
+    questions: [
+      { id: "q3", text: "La personificación consiste en:", options: ["Comparar dos cosas", "Dar cualidades humanas a objetos", "Exagerar algo", "Repetir palabras"], correctAnswer: 1 },
+    ],
   },
-  { 
-    id: "q3", 
-    text: "¿Qué figura literaria se usa en 'El viento susurraba secretos'?", 
-    week: 2, 
-    options: ["Metáfora", "Símil", "Personificación", "Hipérbole"], 
-    correctAnswer: 2, 
-    createdAt: "2024-01-17" 
-  },
-];
+};
 
 const stats = [
-  { label: "Total Materiales", value: "156", icon: FileText, color: "bg-primary" },
-  { label: "Preguntas Activas", value: "89", icon: MessageSquare, color: "bg-purple-500" },
+  { label: "Total Lecciones", value: "24", icon: BookOpen, color: "bg-primary" },
+  { label: "Preguntas Activas", value: "89", icon: ClipboardList, color: "bg-purple-500" },
   { label: "Alumnos Activos", value: "324", icon: Users, color: "bg-success" },
-  { label: "Cursos Activos", value: "12", icon: BookOpen, color: "bg-accent" },
-];
-
-const initialWeekStatus = [
-  { week: 1, isUnlocked: true },
-  { week: 2, isUnlocked: true },
-  { week: 3, isUnlocked: false },
-  { week: 4, isUnlocked: false },
-  { week: 5, isUnlocked: false },
-  { week: 6, isUnlocked: false },
-  { week: 7, isUnlocked: false },
-  { week: 8, isUnlocked: false },
+  { label: "Cursos Activos", value: "1", icon: MessageSquare, color: "bg-accent" },
 ];
 
 interface User {
@@ -81,15 +160,19 @@ interface User {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeItem, setActiveItem] = useState("material");
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState("cuestionarios");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterCourse, setFilterCourse] = useState("all");
-  const [filterWeek, setFilterWeek] = useState("all");
   const [user, setUser] = useState<User | null>(null);
-  const [questions, setQuestions] = useState(mockQuestions);
-  const [weekStatus, setWeekStatus] = useState(initialWeekStatus);
+  
+  // Course and week management state
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [weeksData, setWeeksData] = useState(initialWeeksData);
+  
+  // Modal states
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [selectedWeekForLesson, setSelectedWeekForLesson] = useState<number | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedWeekForDetails, setSelectedWeekForDetails] = useState<number | null>(null);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -100,38 +183,141 @@ const AdminDashboard = () => {
     setUser(JSON.parse(userData));
   }, [navigate]);
 
-  const handleUpload = (data: { name: string; course: string; week: string; file: File | null }) => {
-    console.log("Uploading:", data);
+  const handleSelectCourse = (courseId: string) => {
+    setSelectedCourse(courseId);
   };
 
-  const handleSaveQuestion = (question: { text: string; options: string[]; correctAnswer: number; imageUrl?: string }) => {
-    const newQuestion = {
-      id: `q${questions.length + 1}`,
-      ...question,
-      week: 1,
-      createdAt: new Date().toISOString().split("T")[0],
+  const handleBackToCourses = () => {
+    setSelectedCourse(null);
+  };
+
+  const handleAddLesson = (weekNumber: number) => {
+    setSelectedWeekForLesson(weekNumber);
+    setIsLessonModalOpen(true);
+  };
+
+  const handleViewDetails = (weekNumber: number) => {
+    setSelectedWeekForDetails(weekNumber);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleUnlockWeek = (weekNumber: number) => {
+    if (!selectedCourse) return;
+    
+    setWeeksData(prev => ({
+      ...prev,
+      [selectedCourse]: prev[selectedCourse].map(w =>
+        w.week === weekNumber ? { ...w, isUnlocked: true } : w
+      ),
+    }));
+    
+    toast({
+      title: "Semana desbloqueada",
+      description: `La Semana ${weekNumber} ha sido desbloqueada para todos los alumnos.`,
+    });
+  };
+
+  const handleAddWeek = () => {
+    if (!selectedCourse) return;
+    
+    const currentWeeks = weeksData[selectedCourse] || [];
+    const newWeekNumber = currentWeeks.length + 1;
+    
+    setWeeksData(prev => ({
+      ...prev,
+      [selectedCourse]: [
+        ...prev[selectedCourse],
+        { week: newWeekNumber, isUnlocked: false, lessons: [] },
+      ],
+    }));
+    
+    toast({
+      title: "Semana agregada",
+      description: `Semana ${newWeekNumber} creada exitosamente.`,
+    });
+  };
+
+  const handleDeleteWeek = (weekNumber: number) => {
+    if (!selectedCourse) return;
+    
+    setWeeksData(prev => ({
+      ...prev,
+      [selectedCourse]: prev[selectedCourse].filter(w => w.week !== weekNumber),
+    }));
+    
+    toast({
+      title: "Semana eliminada",
+      description: `La Semana ${weekNumber} ha sido eliminada.`,
+    });
+  };
+
+  const handleSaveLesson = (lesson: {
+    name: string;
+    description: string;
+    questions: Array<{
+      text: string;
+      options: string[];
+      correctAnswer: number;
+      solutionText?: string;
+      solutionImage?: string;
+    }>;
+  }) => {
+    if (!selectedCourse || selectedWeekForLesson === null) return;
+    
+    const newLessonId = `l${selectedWeekForLesson}-${Date.now()}`;
+    const newLesson: Lesson = {
+      id: newLessonId,
+      name: lesson.name,
+      description: lesson.description,
+      questionsCount: lesson.questions.length,
     };
-    setQuestions([...questions, newQuestion]);
+    
+    setWeeksData(prev => ({
+      ...prev,
+      [selectedCourse]: prev[selectedCourse].map(w =>
+        w.week === selectedWeekForLesson
+          ? { ...w, lessons: [...w.lessons, newLesson] }
+          : w
+      ),
+    }));
+    
+    toast({
+      title: "Lección guardada",
+      description: `"${lesson.name}" con ${lesson.questions.length} preguntas agregada a Semana ${selectedWeekForLesson}.`,
+    });
   };
 
-  const filteredMaterials = useMemo(() => {
-    return mockMaterials.filter((material) => {
-      const matchesSearch = material.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           material.course.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCourse = filterCourse === "all" || material.course.toLowerCase() === filterCourse;
-      return matchesSearch && matchesCourse;
+  const handleDeleteLesson = (lessonId: string) => {
+    if (!selectedCourse || selectedWeekForDetails === null) return;
+    
+    setWeeksData(prev => ({
+      ...prev,
+      [selectedCourse]: prev[selectedCourse].map(w =>
+        w.week === selectedWeekForDetails
+          ? { ...w, lessons: w.lessons.filter(l => l.id !== lessonId) }
+          : w
+      ),
+    }));
+    
+    toast({
+      title: "Lección eliminada",
+      description: "La lección ha sido eliminada exitosamente.",
     });
-  }, [searchQuery, filterCourse]);
-
-  const filteredQuestions = useMemo(() => {
-    return questions.filter((question) => {
-      const matchesSearch = question.text.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesWeek = filterWeek === "all" || question.week.toString() === filterWeek;
-      return matchesSearch && matchesWeek;
-    });
-  }, [searchQuery, filterWeek, questions]);
+  };
 
   if (!user) return null;
+
+  // Get lessons for details modal
+  const getWeekLessons = () => {
+    if (!selectedCourse || selectedWeekForDetails === null) return [];
+    const week = weeksData[selectedCourse]?.find(w => w.week === selectedWeekForDetails);
+    if (!week) return [];
+    
+    return week.lessons.map(l => ({
+      ...l,
+      questions: mockLessonDetails[l.id]?.questions || [],
+    }));
+  };
 
   // Render coming soon view for disabled items
   const renderComingSoon = () => (
@@ -147,81 +333,11 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const handleUnlockWeek = (weekNumber: number) => {
-    setWeekStatus(prev => 
-      prev.map(w => 
-        w.week === weekNumber ? { ...w, isUnlocked: true } : w
-      )
-    );
-    toast({
-      title: "Semana desbloqueada",
-      description: `La Semana ${weekNumber} ha sido desbloqueada para todos los alumnos.`,
-    });
-  };
-
-  // Render week management view
-  const renderWeekManagement = () => (
-    <>
-      <div className="card-tesla p-4 lg:p-6 mb-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-foreground">
-            Gestión de Semanas - Comunicación
-          </h2>
-          <p className="text-muted-foreground">
-            Desbloquea semanas para que los alumnos puedan acceder al contenido
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {weekStatus.map((week) => (
-            <div
-              key={week.week}
-              className={cn(
-                "p-4 rounded-2xl border-2 transition-all",
-                week.isUnlocked
-                  ? "bg-success/10 border-success/30"
-                  : "bg-card border-border hover:border-primary/50"
-              )}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-foreground">Semana {week.week}</h3>
-                {week.isUnlocked ? (
-                  <div className="w-8 h-8 rounded-full bg-success flex items-center justify-center">
-                    <Check className="w-5 h-5 text-white" />
-                  </div>
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-              
-              <p className="text-sm text-muted-foreground mb-3">
-                {week.isUnlocked ? "Disponible para alumnos" : "Contenido bloqueado"}
-              </p>
-              
-              {!week.isUnlocked && (
-                <Button
-                  onClick={() => handleUnlockWeek(week.week)}
-                  className="w-full btn-tesla-accent"
-                  size="sm"
-                >
-                  <Unlock className="w-4 h-4 mr-2" />
-                  Desbloquear
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-
-  // Render question management view
-  const renderQuestionManagement = () => (
-    <>
+  // Render questionnaire management (unified view)
+  const renderQuestionnaireManagement = () => (
+    <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -244,61 +360,27 @@ const AdminDashboard = () => {
         })}
       </div>
 
-      {/* Question Management Section */}
+      {/* Main Content */}
       <div className="card-tesla p-4 lg:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">
-              Gestión de Preguntas - Comunicación
-            </h2>
-            <p className="text-muted-foreground">
-              Crea y administra las preguntas del curso de Comunicación
-            </p>
-          </div>
-
-          <Button
-            onClick={() => setIsQuestionModalOpen(true)}
-            className="btn-tesla-accent"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Nueva Pregunta
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex items-center gap-2 flex-1">
-            <Filter className="w-4 h-4 text-muted-foreground" />
-            <Select value={filterWeek} onValueChange={setFilterWeek}>
-              <SelectTrigger className="w-full sm:w-40 input-tesla">
-                <SelectValue placeholder="Filtrar por semana" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border">
-                <SelectItem value="all">Todas las semanas</SelectItem>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((w) => (
-                  <SelectItem key={w} value={w.toString()}>
-                    Semana {w}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Questions Table */}
-        {filteredQuestions.length > 0 ? (
-          <QuestionTable
-            questions={filteredQuestions}
-            onEdit={(id) => console.log("Edit:", id)}
-            onDelete={(id) => setQuestions(questions.filter((q) => q.id !== id))}
+        {!selectedCourse ? (
+          <CourseSelector
+            courses={mockCourses}
+            onSelectCourse={handleSelectCourse}
           />
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            No se encontraron preguntas para los filtros seleccionados
-          </div>
+          <WeekManager
+            courseName={mockCourses.find(c => c.id === selectedCourse)?.name || ""}
+            weeks={weeksData[selectedCourse] || []}
+            onBack={handleBackToCourses}
+            onAddLesson={handleAddLesson}
+            onViewDetails={handleViewDetails}
+            onUnlockWeek={handleUnlockWeek}
+            onAddWeek={handleAddWeek}
+            onDeleteWeek={handleDeleteWeek}
+          />
         )}
       </div>
-    </>
+    </div>
   );
 
   return (
@@ -314,114 +396,46 @@ const AdminDashboard = () => {
       <div className="flex-1 w-full transition-all duration-300">
         <Header 
           userName={user.name.split(" ")[0]} 
-          showSearch={activeItem === "material" || activeItem === "preguntas"}
+          showSearch={activeItem === "cuestionarios"}
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
         />
 
         <main className="p-4 lg:p-6">
-          {activeItem === "material" ? (
-            <>
-              {/* Stats Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {stats.map((stat, index) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div
-                      key={stat.label}
-                      className="card-tesla p-4 lg:p-6 animate-slide-up"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs lg:text-sm text-muted-foreground mb-1">{stat.label}</p>
-                          <p className="text-xl lg:text-3xl font-bold text-foreground">{stat.value}</p>
-                        </div>
-                        <div className={`w-10 h-10 lg:w-12 lg:h-12 ${stat.color} rounded-xl flex items-center justify-center`}>
-                          <Icon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Material Management Section */}
-              <div className="card-tesla p-4 lg:p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-foreground">
-                      Gestión de Materiales
-                    </h2>
-                    <p className="text-muted-foreground">
-                      Administra todo el contenido académico
-                    </p>
-                  </div>
-
-                  <Button
-                    onClick={() => setIsUploadModalOpen(true)}
-                    className="btn-tesla-accent"
-                  >
-                    <Upload className="w-5 h-5 mr-2" />
-                    Subir Nuevo Material
-                  </Button>
-                </div>
-
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                  <div className="flex items-center gap-2 flex-1">
-                    <Filter className="w-4 h-4 text-muted-foreground" />
-                    <Select value={filterCourse} onValueChange={setFilterCourse}>
-                      <SelectTrigger className="w-full sm:w-40 input-tesla">
-                        <SelectValue placeholder="Filtrar por curso" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border border-border">
-                        <SelectItem value="all">Todos los cursos</SelectItem>
-                        <SelectItem value="física">Física</SelectItem>
-                        <SelectItem value="química">Química</SelectItem>
-                        <SelectItem value="álgebra">Álgebra</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Materials Table */}
-                {filteredMaterials.length > 0 ? (
-                  <MaterialTable
-                    materials={filteredMaterials}
-                    onEdit={(id) => console.log("Edit:", id)}
-                    onDelete={(id) => console.log("Delete:", id)}
-                  />
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    No se encontraron materiales para "{searchQuery}"
-                  </div>
-                )}
-              </div>
-            </>
-          ) : activeItem === "preguntas" ? (
-            renderQuestionManagement()
-          ) : activeItem === "semanas" ? (
-            renderWeekManagement()
+          {activeItem === "cuestionarios" ? (
+            renderQuestionnaireManagement()
           ) : (
             renderComingSoon()
           )}
         </main>
       </div>
 
-      {/* Upload Modal */}
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleUpload}
-      />
+      {/* Lesson Form Modal */}
+      {selectedWeekForLesson !== null && (
+        <LessonFormModal
+          isOpen={isLessonModalOpen}
+          onClose={() => {
+            setIsLessonModalOpen(false);
+            setSelectedWeekForLesson(null);
+          }}
+          weekNumber={selectedWeekForLesson}
+          onSave={handleSaveLesson}
+        />
+      )}
 
-      {/* Question Upload Modal */}
-      <QuestionUploadModal
-        isOpen={isQuestionModalOpen}
-        onClose={() => setIsQuestionModalOpen(false)}
-        onSave={handleSaveQuestion}
-      />
+      {/* Week Details Modal */}
+      {selectedWeekForDetails !== null && (
+        <WeekDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => {
+            setIsDetailsModalOpen(false);
+            setSelectedWeekForDetails(null);
+          }}
+          weekNumber={selectedWeekForDetails}
+          lessons={getWeekLessons()}
+          onDeleteLesson={handleDeleteLesson}
+        />
+      )}
     </div>
   );
 };

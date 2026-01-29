@@ -4,55 +4,130 @@ import { GamifiedStatusBar } from "@/components/gamification/GamifiedStatusBar";
 import { LearningPath } from "@/components/gamification/LearningPath";
 import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
-import { Construction, User, Settings, LogOut } from "lucide-react";
+import { StreakMascot } from "@/components/gamification/StreakMascot";
+import { QuizModal, QuizQuestion } from "@/components/student/QuizModal";
+import { Construction, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
-// Mock data for the learning path
+// Mock data for lessons with quizzes
+const mockLessons: Record<string, { 
+  id: string; 
+  title: string; 
+  description: string; 
+  questions: QuizQuestion[]; 
+  completedAttempts: number;
+  bestScore: number;
+  totalQuestions: number;
+}> = {
+  "w1-leccion1": {
+    id: "w1-leccion1",
+    title: "Comprensión Lectora I",
+    description: "Técnicas fundamentales para analizar textos.",
+    completedAttempts: 2,
+    bestScore: 8,
+    totalQuestions: 10,
+    questions: [
+      {
+        id: "q1",
+        text: "¿Cuál es el sinónimo de 'efímero'?",
+        options: ["Eterno", "Pasajero", "Sólido", "Firme"],
+        correctAnswer: 1,
+        solutionText: "Efímero significa que dura poco tiempo, por lo tanto su sinónimo es 'Pasajero'.",
+      },
+      {
+        id: "q2",
+        text: "Identifica el tipo de texto: 'La receta indica mezclar todos los ingredientes...'",
+        options: ["Narrativo", "Instructivo", "Descriptivo", "Argumentativo"],
+        correctAnswer: 1,
+        solutionText: "Es un texto instructivo porque da indicaciones paso a paso.",
+      },
+      {
+        id: "q3",
+        text: "¿Qué figura literaria se usa en 'El viento susurraba secretos'?",
+        options: ["Metáfora", "Símil", "Personificación", "Hipérbole"],
+        correctAnswer: 2,
+        solutionText: "Es personificación porque se le atribuye una acción humana (susurrar) a un elemento no humano (el viento).",
+      },
+    ],
+  },
+  "w1-leccion2": {
+    id: "w1-leccion2",
+    title: "Comprensión Lectora II",
+    description: "Análisis de textos más complejos.",
+    completedAttempts: 1,
+    bestScore: 9,
+    totalQuestions: 10,
+    questions: [
+      {
+        id: "q4",
+        text: "¿Cuál es el antónimo de 'prolijo'?",
+        options: ["Ordenado", "Descuidado", "Meticuloso", "Esmerado"],
+        correctAnswer: 1,
+        solutionText: "Prolijo significa cuidadoso y detallado, su antónimo es 'Descuidado'.",
+      },
+      {
+        id: "q5",
+        text: "El texto que busca convencer al lector es de tipo:",
+        options: ["Narrativo", "Expositivo", "Argumentativo", "Descriptivo"],
+        correctAnswer: 2,
+        solutionText: "Los textos argumentativos buscan persuadir o convencer al lector de una postura.",
+      },
+    ],
+  },
+  "w2-leccion1": {
+    id: "w2-leccion1",
+    title: "Reglas Ortográficas",
+    description: "Domina las reglas esenciales de ortografía.",
+    completedAttempts: 0,
+    bestScore: 0,
+    totalQuestions: 10,
+    questions: [
+      {
+        id: "q6",
+        text: "¿Cuál palabra está correctamente escrita?",
+        options: ["Excelente", "Exelente", "Excellente", "Ecselente"],
+        correctAnswer: 0,
+      },
+      {
+        id: "q7",
+        text: "Las palabras agudas llevan tilde cuando:",
+        options: ["Siempre", "Terminan en n, s o vocal", "Nunca", "Terminan en consonante"],
+        correctAnswer: 1,
+        solutionText: "Las palabras agudas llevan tilde cuando terminan en n, s o vocal.",
+      },
+    ],
+  },
+};
+
+// Mock week sections with lessons
 const mockWeekSections = [
   {
     week: 1,
     title: "Fundamentos de Comunicación",
     isUnlocked: true,
-    nodes: [
+    lessons: [
       {
-        id: "w1-teoria",
-        type: "teoria" as const,
-        title: "Comprensión Lectora",
-        description: "Técnicas fundamentales para analizar textos de manera efectiva.",
+        id: "w1-leccion1",
+        type: "leccion" as const,
+        title: "Comprensión Lectora I",
+        description: "Técnicas fundamentales para analizar textos.",
         isCompleted: true,
         isLocked: false,
         isCurrent: false,
         exp: 50,
+        completionRate: 80,
       },
       {
-        id: "w1-practica",
-        type: "practica" as const,
-        title: "Ejercicios de Comprensión",
-        description: "Practica con ejercicios interactivos de lectura.",
+        id: "w1-leccion2",
+        type: "leccion" as const,
+        title: "Comprensión Lectora II",
+        description: "Análisis de textos más complejos.",
         isCompleted: true,
         isLocked: false,
         isCurrent: false,
         exp: 75,
-      },
-      {
-        id: "w1-examen",
-        type: "examen" as const,
-        title: "Examen Semanal 1",
-        description: "Demuestra lo aprendido en esta semana.",
-        isCompleted: true,
-        isLocked: false,
-        isCurrent: false,
-        exp: 150,
-      },
-      {
-        id: "w1-recompensa",
-        type: "recompensa" as const,
-        title: "Cofre de Recompensas",
-        description: "¡Desbloquea materiales extra!",
-        isCompleted: true,
-        isLocked: false,
-        isCurrent: false,
-        exp: 25,
+        completionRate: 90,
       },
     ],
   },
@@ -60,46 +135,28 @@ const mockWeekSections = [
     week: 2,
     title: "Ortografía y Redacción",
     isUnlocked: true,
-    nodes: [
+    lessons: [
       {
-        id: "w2-teoria",
-        type: "teoria" as const,
+        id: "w2-leccion1",
+        type: "leccion" as const,
         title: "Reglas Ortográficas",
-        description: "Domina las reglas esenciales de ortografía española.",
-        isCompleted: true,
-        isLocked: false,
-        isCurrent: false,
-        exp: 50,
-      },
-      {
-        id: "w2-practica",
-        type: "practica" as const,
-        title: "Práctica de Redacción",
-        description: "Ejercicios para mejorar tu escritura.",
+        description: "Domina las reglas esenciales de ortografía.",
         isCompleted: false,
         isLocked: false,
         isCurrent: true,
+        exp: 50,
+        completionRate: 0,
+      },
+      {
+        id: "w2-leccion2",
+        type: "leccion" as const,
+        title: "Práctica de Redacción",
+        description: "Ejercicios para mejorar tu escritura.",
+        isCompleted: false,
+        isLocked: true,
+        isCurrent: false,
         exp: 75,
-      },
-      {
-        id: "w2-examen",
-        type: "examen" as const,
-        title: "Examen Semanal 2",
-        description: "Evalúa tus conocimientos de ortografía.",
-        isCompleted: false,
-        isLocked: true,
-        isCurrent: false,
-        exp: 150,
-      },
-      {
-        id: "w2-recompensa",
-        type: "recompensa" as const,
-        title: "Cofre de Recompensas",
-        description: "Material bonus de ortografía.",
-        isCompleted: false,
-        isLocked: true,
-        isCurrent: false,
-        exp: 25,
+        completionRate: 0,
       },
     ],
   },
@@ -107,87 +164,61 @@ const mockWeekSections = [
     week: 3,
     title: "Análisis Textual",
     isUnlocked: false,
-    nodes: [
+    lessons: [
       {
-        id: "w3-teoria",
-        type: "teoria" as const,
+        id: "w3-leccion1",
+        type: "leccion" as const,
         title: "Tipos de Texto",
-        description: "Aprende a identificar y analizar diferentes tipos de textos.",
+        description: "Aprende a identificar diferentes tipos de textos.",
         isCompleted: false,
         isLocked: true,
         isCurrent: false,
         exp: 50,
+        completionRate: 0,
       },
       {
-        id: "w3-practica",
-        type: "practica" as const,
+        id: "w3-leccion2",
+        type: "leccion" as const,
         title: "Análisis Práctico",
         description: "Ejercicios de análisis textual.",
         isCompleted: false,
         isLocked: true,
         isCurrent: false,
         exp: 75,
-      },
-      {
-        id: "w3-examen",
-        type: "examen" as const,
-        title: "Examen Semanal 3",
-        description: "Demuestra tu capacidad de análisis.",
-        isCompleted: false,
-        isLocked: true,
-        isCurrent: false,
-        exp: 150,
-      },
-      {
-        id: "w3-recompensa",
-        type: "recompensa" as const,
-        title: "Cofre de Recompensas",
-        description: "Desbloquea contenido especial.",
-        isCompleted: false,
-        isLocked: true,
-        isCurrent: false,
-        exp: 25,
+        completionRate: 0,
       },
     ],
   },
 ];
 
-// Generate weeks 4-8 (locked)
+// Generate locked weeks 4-8
 for (let w = 4; w <= 8; w++) {
   mockWeekSections.push({
     week: w,
     title: `Semana ${w}`,
     isUnlocked: false,
-    nodes: [
+    lessons: [
       {
-        id: `w${w}-teoria`,
-        type: "teoria" as const,
-        title: "Contenido Teórico",
-        description: "Material de teoría para esta semana.",
+        id: `w${w}-leccion1`,
+        type: "leccion" as const,
+        title: "Lección 1",
+        description: "Contenido teórico.",
         isCompleted: false,
         isLocked: true,
         isCurrent: false,
         exp: 50,
+        completionRate: 0,
       },
       {
-        id: `w${w}-practica`,
-        type: "practica" as const,
-        title: "Práctica Interactiva",
-        description: "Ejercicios prácticos.",
+        id: `w${w}-leccion2`,
+        type: "leccion" as const,
+        title: "Lección 2",
+        description: "Práctica interactiva.",
         isCompleted: false,
         isLocked: true,
         isCurrent: false,
         exp: 75,
-      },
-      {
-        id: `w${w}-examen`,
-        type: "examen" as const,
-        title: `Examen Semanal ${w}`,
-        description: "Evaluación semanal.",
-        isCompleted: false,
-        isLocked: true,
-        isCurrent: false,
-        exp: 150,
+        completionRate: 0,
       },
     ],
   });
@@ -217,13 +248,19 @@ const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState<"path" | "ranking" | "profile" | "notifications">("path");
   const [selectedCourse, setSelectedCourse] = useState("comunicacion");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Quiz modal state
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [currentLesson, setCurrentLesson] = useState<typeof mockLessons["w1-leccion1"] | null>(null);
+  const [lessonAttempts, setLessonAttempts] = useState<Record<string, number>>({
+    "w1-leccion1": 2,
+    "w1-leccion2": 1,
+  });
 
-  // Gamification stats
-  const [stats] = useState({
+  // Gamification stats (removed lives)
+  const [stats, setStats] = useState({
     currentStreak: 7,
     gems: 2250,
-    lives: 4,
-    maxLives: 5,
   });
 
   useEffect(() => {
@@ -236,8 +273,44 @@ const StudentDashboard = () => {
   }, [navigate]);
 
   const handleNodeClick = (nodeId: string, weekNumber: number) => {
-    console.log("Node clicked:", nodeId, "Week:", weekNumber);
-    // Here you would navigate to the actual content
+    const lesson = mockLessons[nodeId];
+    if (lesson) {
+      setCurrentLesson(lesson);
+      setIsQuizOpen(true);
+    } else {
+      toast({
+        title: "Lección no disponible",
+        description: "Esta lección aún no tiene contenido asignado.",
+      });
+    }
+  };
+
+  const handleQuizComplete = (score: number, isFirstAttempt: boolean) => {
+    if (currentLesson) {
+      // Update attempts count
+      setLessonAttempts(prev => ({
+        ...prev,
+        [currentLesson.id]: (prev[currentLesson.id] || 0) + 1,
+      }));
+
+      // Only add points on first attempt
+      if (isFirstAttempt) {
+        const points = score * 10;
+        setStats(prev => ({
+          ...prev,
+          gems: prev.gems + points,
+        }));
+        toast({
+          title: "¡Quiz completado!",
+          description: `Has ganado ${points} puntos para el ranking.`,
+        });
+      } else {
+        toast({
+          title: "Quiz completado",
+          description: "Este intento no suma puntos al ranking.",
+        });
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -251,20 +324,43 @@ const StudentDashboard = () => {
     
     return mockWeekSections.map(week => ({
       ...week,
-      nodes: week.nodes.filter(node => 
-        node.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        node.description.toLowerCase().includes(searchQuery.toLowerCase())
+      lessons: week.lessons.filter(lesson => 
+        lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lesson.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    })).filter(week => week.nodes.length > 0);
+    })).filter(week => week.lessons.length > 0);
   }, [searchQuery]);
+
+  // Check if course is enabled (only Comunicación for pilot)
+  const isCourseEnabled = selectedCourse === "comunicacion";
 
   if (!user) return null;
 
   const renderContent = () => {
+    if (!isCourseEnabled) {
+      return (
+        <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
+          <Construction className="w-16 h-16 text-muted-foreground mb-4" />
+          <h2 className="text-2xl font-semibold text-foreground mb-2">
+            Curso Bloqueado
+          </h2>
+          <p className="text-muted-foreground max-w-md">
+            Este curso será habilitado por el administrador próximamente.
+            Por ahora, continúa con el curso de Comunicación.
+          </p>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "path":
         return (
           <div className="pb-24 lg:pb-8">
+            {/* Streak Mascot - Show on top of path */}
+            <div className="flex justify-center py-6">
+              <StreakMascot streakDays={stats.currentStreak} />
+            </div>
+            
             <LearningPath
               weeks={filteredWeeks}
               currentWeek={2}
@@ -327,6 +423,12 @@ const StudentDashboard = () => {
                 </div>
               </div>
 
+              {/* Streak Mascot in Profile */}
+              <div className="bg-card rounded-2xl p-4 border border-border">
+                <h3 className="font-semibold text-foreground mb-4 text-center">Mi Mascota de Racha</h3>
+                <StreakMascot streakDays={stats.currentStreak} />
+              </div>
+
               <Button 
                 variant="outline" 
                 className="w-full rounded-2xl"
@@ -360,14 +462,12 @@ const StudentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-secondary">
-      {/* Gamified Status Bar */}
+      {/* Gamified Status Bar (without lives) */}
       <GamifiedStatusBar
         userName={user.name}
         userCode={user.code}
         currentStreak={stats.currentStreak}
         gems={stats.gems}
-        lives={stats.lives}
-        maxLives={stats.maxLives}
         selectedCourse={selectedCourse}
         onCourseChange={setSelectedCourse}
         searchValue={searchQuery}
@@ -406,6 +506,22 @@ const StudentDashboard = () => {
         onTabChange={setActiveTab}
         notificationCount={3}
       />
+
+      {/* Quiz Modal */}
+      {currentLesson && (
+        <QuizModal
+          isOpen={isQuizOpen}
+          onClose={() => {
+            setIsQuizOpen(false);
+            setCurrentLesson(null);
+          }}
+          lessonTitle={currentLesson.title}
+          questions={currentLesson.questions}
+          onComplete={handleQuizComplete}
+          isFirstAttempt={(lessonAttempts[currentLesson.id] || 0) === 0}
+          timePerQuestion={180}
+        />
+      )}
     </div>
   );
 };

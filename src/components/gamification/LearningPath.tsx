@@ -1,22 +1,24 @@
-import { Video, Dumbbell, Star, Package, Lock, Check, Play } from "lucide-react";
+import { BookOpen, Lock, Check, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
-interface PathNode {
+interface LessonNode {
   id: string;
-  type: "teoria" | "practica" | "examen" | "recompensa";
+  type: "leccion";
   title: string;
   description: string;
   isCompleted: boolean;
   isLocked: boolean;
   isCurrent: boolean;
   exp: number;
+  completionRate: number;
 }
 
 interface WeekSection {
   week: number;
   title: string;
   isUnlocked: boolean;
-  nodes: PathNode[];
+  lessons: LessonNode[];
 }
 
 interface LearningPathProps {
@@ -24,33 +26,6 @@ interface LearningPathProps {
   currentWeek: number;
   onNodeClick: (nodeId: string, weekNumber: number) => void;
 }
-
-const nodeConfig = {
-  teoria: {
-    icon: Video,
-    gradient: "from-blue-400 to-blue-600",
-    bgGlow: "shadow-blue-500/30",
-    label: "Teoría",
-  },
-  practica: {
-    icon: Dumbbell,
-    gradient: "from-green-400 to-green-600",
-    bgGlow: "shadow-green-500/30",
-    label: "Práctica",
-  },
-  examen: {
-    icon: Star,
-    gradient: "from-accent to-yellow-600",
-    bgGlow: "shadow-yellow-500/30",
-    label: "Examen",
-  },
-  recompensa: {
-    icon: Package,
-    gradient: "from-purple-400 to-purple-600",
-    bgGlow: "shadow-purple-500/30",
-    label: "Recompensa",
-  },
-};
 
 export const LearningPath = ({ weeks, currentWeek, onNodeClick }: LearningPathProps) => {
   return (
@@ -75,7 +50,7 @@ export const LearningPath = ({ weeks, currentWeek, onNodeClick }: LearningPathPr
             <div className="h-px flex-1 bg-gradient-to-r from-border via-transparent to-transparent" />
           </div>
 
-          {/* Path Nodes */}
+          {/* Lesson Nodes */}
           <div className="relative max-w-md mx-auto">
             {/* Connecting Line */}
             <div className={cn(
@@ -85,75 +60,89 @@ export const LearningPath = ({ weeks, currentWeek, onNodeClick }: LearningPathPr
                 : "bg-muted"
             )} />
 
-            {weekSection.nodes.map((node, nodeIndex) => {
-              const config = nodeConfig[node.type];
-              const Icon = config.icon;
-              const isLeft = nodeIndex % 2 === 0;
+            {weekSection.lessons.map((lesson, lessonIndex) => {
+              const isLeft = lessonIndex % 2 === 0;
 
               return (
                 <div
-                  key={node.id}
+                  key={lesson.id}
                   className={cn(
                     "relative flex items-center gap-4 mb-8",
                     isLeft ? "flex-row" : "flex-row-reverse"
                   )}
-                  style={{ animationDelay: `${nodeIndex * 0.1}s` }}
+                  style={{ animationDelay: `${lessonIndex * 0.1}s` }}
                 >
                   {/* Content Card */}
                   <div className={cn(
                     "flex-1 transition-all duration-300",
                     isLeft ? "text-right pr-4" : "text-left pl-4",
-                    node.isLocked && "opacity-50"
+                    lesson.isLocked && "opacity-50"
                   )}>
                     <div className={cn(
-                      "inline-block p-4 rounded-2xl bg-card border-2 transition-all duration-300",
-                      node.isCurrent && !node.isLocked
+                      "inline-block p-4 rounded-2xl bg-card border-2 transition-all duration-300 w-full max-w-[220px]",
+                      lesson.isCurrent && !lesson.isLocked
                         ? "border-primary shadow-lg shadow-primary/20 scale-105"
-                        : node.isCompleted
+                        : lesson.isCompleted
                         ? "border-success/50"
                         : "border-border hover:border-primary/50 hover:shadow-md"
                     )}>
                       <span className={cn(
                         "inline-block px-2 py-0.5 rounded-full text-xs font-medium mb-2",
-                        node.isCompleted 
+                        lesson.isCompleted 
                           ? "bg-success/20 text-success" 
                           : "bg-primary/10 text-primary"
                       )}>
-                        {config.label} • +{node.exp} EXP
+                        Lección • +{lesson.exp} EXP
                       </span>
                       <h3 className={cn(
-                        "font-semibold mb-1",
-                        node.isCompleted ? "text-muted-foreground" : "text-foreground"
+                        "font-semibold mb-1 text-sm",
+                        lesson.isCompleted ? "text-muted-foreground" : "text-foreground"
                       )}>
-                        {node.title}
+                        {lesson.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {node.description}
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                        {lesson.description}
                       </p>
+                      
+                      {/* Progress Bar */}
+                      {lesson.isCompleted && (
+                        <div className="space-y-1">
+                          <Progress value={lesson.completionRate} className="h-1.5" />
+                          <p className="text-xs text-success">{lesson.completionRate}% completado</p>
+                        </div>
+                      )}
+                      
+                      {!lesson.isCompleted && !lesson.isLocked && (
+                        <p className="text-xs text-primary font-medium">
+                          {lesson.isCurrent ? "Continuar" : "Iniciar quiz"}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   {/* Center Node Circle */}
                   <button
-                    onClick={() => !node.isLocked && onNodeClick(node.id, weekSection.week)}
-                    disabled={node.isLocked}
+                    onClick={() => !lesson.isLocked && onNodeClick(lesson.id, weekSection.week)}
+                    disabled={lesson.isLocked}
                     className={cn(
                       "relative z-10 w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center transition-all duration-300",
                       "bg-gradient-to-br shadow-lg",
-                      node.isLocked
+                      lesson.isLocked
                         ? "from-muted to-muted/80 cursor-not-allowed"
-                        : cn(config.gradient, config.bgGlow, "hover:scale-110 hover:shadow-xl active:scale-95 cursor-pointer"),
-                      node.isCurrent && !node.isLocked && "ring-4 ring-white ring-offset-2 ring-offset-background animate-pulse"
+                        : lesson.isCompleted
+                        ? "from-success to-green-600 shadow-green-500/30 hover:scale-110 hover:shadow-xl active:scale-95 cursor-pointer"
+                        : "from-primary to-tesla-blue-light shadow-primary/30 hover:scale-110 hover:shadow-xl active:scale-95 cursor-pointer",
+                      lesson.isCurrent && !lesson.isLocked && "ring-4 ring-white ring-offset-2 ring-offset-background animate-pulse"
                     )}
                   >
-                    {node.isLocked ? (
+                    {lesson.isLocked ? (
                       <Lock className="w-6 h-6 lg:w-8 lg:h-8 text-muted-foreground" />
-                    ) : node.isCompleted ? (
+                    ) : lesson.isCompleted ? (
                       <Check className="w-6 h-6 lg:w-8 lg:h-8 text-white" strokeWidth={3} />
-                    ) : node.isCurrent ? (
+                    ) : lesson.isCurrent ? (
                       <Play className="w-6 h-6 lg:w-8 lg:h-8 text-white ml-1" fill="white" />
                     ) : (
-                      <Icon className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+                      <BookOpen className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
                     )}
                   </button>
 
