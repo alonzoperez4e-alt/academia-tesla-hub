@@ -235,7 +235,7 @@ const mockRankingsBase = [
   { position: 5, name: "Pedro Sánchez", exp: 2180, trend: "down" as const },
   { position: 6, name: "Laura Díaz", exp: 2100, trend: "up" as const },
   { position: 7, name: "Jorge Ruiz", exp: 2050, trend: "same" as const },
-  { position: 8, name: "Carmen López ", exp: 1980, trend: "down" as const },
+  { position: 8, name: "Carmen López", exp: 1980, trend: "down" as const },
 ];
 
 interface User {
