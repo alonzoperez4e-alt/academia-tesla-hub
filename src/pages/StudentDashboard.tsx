@@ -229,7 +229,7 @@ for (let w = 4; w <= 8; w++) {
 
 // Mock rankings base (sin el usuario actual)
 const mockRankingsBase = [
-  { position: 1, name: "Ana Martínez", exp: 2450, trend: "same" as const },
+  { position: 1, name: "Ana Martínez ", exp: 2450, trend: "same" as const },
   { position: 2, name: "Luis García", exp: 2380, trend: "up" as const },
   { position: 3, name: "María Fernández", exp: 2310, trend: "down" as const },
   { position: 5, name: "Pedro Sánchez", exp: 2180, trend: "down" as const },
