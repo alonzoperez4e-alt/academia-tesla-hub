@@ -252,6 +252,11 @@ const StudentDashboard = () => {
   const [selectedCourse, setSelectedCourse] = useState("comunicacion");
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Reset scroll to top cuando cambia de tab
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeTab]);
+  
   // Quiz modal state
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [currentLesson, setCurrentLesson] = useState<typeof mockLessons["w1-leccion1"] | null>(null);
@@ -477,99 +482,9 @@ const StudentDashboard = () => {
               currentStreak={stats.currentStreak}
               totalExp={stats.gems}
               weeklyGoal={75}
+              userCode={user.code}
+              userArea={user.area}
             />
-            
-            {/* Additional Profile Info - Rediseñado */}
-            <div className="max-w-2xl mx-auto mt-8 space-y-4 px-4">
-              <div className="bg-gradient-to-br from-white to-primary/5 rounded-2xl p-5 sm:p-6 border border-primary/20 shadow-lg">
-                {/* Header */}
-                <div className="flex items-center justify-center gap-2 mb-6">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <User className="w-5 h-5 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-lg text-foreground">
-                    Información del Perfil
-                  </h3>
-                </div>
-                
-                {/* Grid de información */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Código del estudiante */}
-                  <div className="bg-white/80 rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all hover:shadow-md">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <IdCard className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground mb-1">Código de Estudiante</p>
-                        <p className="font-bold text-base text-foreground">{user.code}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Área */}
-                  <div className="bg-white/80 rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all hover:shadow-md">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-purple-100 rounded-lg">
-                        <GraduationCap className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground mb-1">Área de Estudio</p>
-                        <p className="font-bold text-base text-foreground">{user.area || "No asignada"}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* EXP Total - Destacado */}
-                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 rounded-xl p-4 border-2 border-yellow-300/50 hover:border-yellow-400 transition-all hover:shadow-md">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-yellow-400/20 rounded-lg">
-                        <Zap className="w-5 h-5 text-yellow-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-yellow-700/70 mb-1">EXP Total Acumulado</p>
-                        <div className="flex items-baseline gap-2">
-                          <p className="font-bold text-2xl text-yellow-700">{stats.gems}</p>
-                          <span className="text-sm text-yellow-600/70">EXP</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Racha Actual - Destacado */}
-                  <div className="bg-gradient-to-br from-orange-50 to-red-50/50 rounded-xl p-4 border-2 border-orange-300/50 hover:border-orange-400 transition-all hover:shadow-md">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-orange-400/20 rounded-lg">
-                        <Flame className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-orange-700/70 mb-1">Racha de Aprendizaje</p>
-                        <div className="flex items-baseline gap-2">
-                          <p className="font-bold text-2xl text-orange-600">{stats.currentStreak}</p>
-                          <span className="text-sm text-orange-500/70">días</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mensaje motivacional */}
-                <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/10">
-                  <p className="text-xs sm:text-sm text-center text-muted-foreground">
-                    💪 ¡Sigue acumulando EXP y mantén tu racha activa para desbloquear más recompensas!
-                  </p>
-                </div>
-              </div>
-
-              <Button 
-                variant="outline" 
-                className="w-full rounded-2xl hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Cerrar Sesión
-              </Button>
-            </div>
           </div>
         );
       
@@ -607,8 +522,8 @@ const StudentDashboard = () => {
         onLogout={handleLogout}
       />
 
-      {/* Desktop Navigation Tabs */}
-      <div className="hidden lg:flex items-center justify-center gap-2 py-4 bg-card/50 border-b border-border">
+      {/* Desktop Navigation Tabs - Fixed siempre visible debajo del GamifiedStatusBar */}
+      <div className="hidden lg:flex items-center justify-center gap-2 py-4 bg-card/95 backdrop-blur-sm border-b border-border fixed top-[88px] left-0 right-0 z-40 shadow-sm">
         {[
           { id: "path" as const, label: "El Camino" },
           { id: "ranking" as const, label: "Ranking" },
@@ -628,8 +543,8 @@ const StudentDashboard = () => {
         ))}
       </div>
 
-      {/* Main Content */}
-      <main className="min-h-[calc(100vh-8rem)]">
+      {/* Main Content - con padding-top para compensar ambos headers fixed */}
+      <main className="min-h-[calc(100vh-8rem)] lg:pt-[156px]">
         {renderContent()}
       </main>
 

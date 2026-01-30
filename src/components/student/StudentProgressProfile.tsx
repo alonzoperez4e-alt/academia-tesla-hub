@@ -3,7 +3,7 @@ import StudentCharacter3D from './StudentCharacter3D';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Target, TrendingUp, Star } from 'lucide-react';
+import { Trophy, Target, TrendingUp, Star, User, IdCard, GraduationCap, Zap, Flame } from 'lucide-react';
 
 interface StudentProgressProfileProps {
   userName: string;
@@ -14,6 +14,8 @@ interface StudentProgressProfileProps {
   currentStreak: number;
   totalExp: number;
   weeklyGoal: number;
+  userCode?: string;
+  userArea?: string;
 }
 
 const StudentProgressProfile = ({
@@ -24,7 +26,9 @@ const StudentProgressProfile = ({
   totalLessons,
   currentStreak,
   totalExp,
-  weeklyGoal
+  weeklyGoal,
+  userCode,
+  userArea
 }: StudentProgressProfileProps) => {
   
   // Get student level based on progress
@@ -49,102 +53,104 @@ const StudentProgressProfile = ({
     >
       <Card className="bg-gradient-to-br from-primary/5 via-white to-accent/5 border-primary/20 shadow-xl">
         <CardHeader className="text-center pb-6">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5, ease: "backOut" }}
-          >
-            <Badge className={`${studentLevel.color} text-white px-4 py-2 text-sm font-bold mb-3 inline-flex items-center gap-2`}>
-              <span className="text-lg">{studentLevel.icon}</span>
-              {studentLevel.level}
-            </Badge>
-          </motion.div>
-          
           <CardTitle className="text-3xl font-bold text-foreground mb-2">
             ¡Hola, {userName}!
           </CardTitle>
           
           <p className="text-muted-foreground text-lg">
-            Tu personaje está creciendo junto con tu aprendizaje
+            Revisa tu progreso y continúa aprendiendo
           </p>
         </CardHeader>
         
         <CardContent className="space-y-8">
-          {/* Main Character Display */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6, ease: "backOut" }}
-            className="flex justify-center py-4"
-          >
-            <div className="relative px-4 sm:px-8">
-              {/* Dinosaurio con escala ligeramente aumentada (8%) */}
-              <div className="transform scale-105 sm:scale-110">
-                <StudentCharacter3D 
-                  progress={dinosaurProgress} 
-                  size="md"
-                  showProgressText={true}
-                />
-              </div>
-              
-              {/* Floating stats around character - más sutiles y lentos */}
-              <motion.div
-                animate={{
-                  rotate: [0, 360]
-                }}
-                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 pointer-events-none"
-              >
-                {/* EXP Badge - discreto */}
-                <motion.div
-                  animate={{
-                    rotate: [0, -360]
-                  }}
-                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                  className="absolute -top-2 -right-4 sm:-right-6 opacity-75 hover:opacity-100 transition-opacity"
-                >
-                  <Badge className="bg-yellow-500 text-white px-2 py-1 text-xs sm:text-sm font-bold shadow-md">
-                    <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    {totalExp} EXP
-                  </Badge>
-                </motion.div>
-                
-                {/* Streak Badge - discreto */}
-                <motion.div
-                  animate={{
-                    rotate: [0, -360]
-                  }}
-                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                  className="absolute top-6 sm:top-8 -left-4 sm:-left-8 opacity-75 hover:opacity-100 transition-opacity"
-                >
-                  <Badge className="bg-orange-500 text-white px-2 py-1 text-xs sm:text-sm font-bold shadow-md">
-                    <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    {currentStreak} días
-                  </Badge>
-                </motion.div>
-                
-                {/* Lessons Badge - discreto */}
-                <motion.div
-                  animate={{
-                    rotate: [0, -360]
-                  }}
-                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                  className="absolute -bottom-4 sm:-bottom-6 left-2 sm:left-4 opacity-75 hover:opacity-100 transition-opacity"
-                >
-                  <Badge className="bg-green-500 text-white px-2 py-1 text-xs sm:text-sm font-bold shadow-lg">
-                    <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    {completedLessons}/{totalLessons}
-                  </Badge>
-                </motion.div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Progress Statistics Grid */}
+          {/* ====== 1. INFORMACIÓN DEL PERFIL (Primero) ====== */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="bg-gradient-to-br from-white to-primary/5 rounded-2xl p-5 sm:p-6 border border-primary/20 shadow-lg"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-bold text-lg text-foreground">
+                Información del Perfil
+              </h3>
+            </div>
+            
+            {/* Grid de información */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Código del estudiante */}
+              {userCode && (
+                <div className="bg-white/80 rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all hover:shadow-md">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <IdCard className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-1">Código de Estudiante</p>
+                      <p className="font-bold text-base text-foreground">{userCode}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Área */}
+              {userArea && (
+                <div className="bg-white/80 rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all hover:shadow-md">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <GraduationCap className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-1">Área de Estudio</p>
+                      <p className="font-bold text-base text-foreground">{userArea}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* EXP Total - Destacado */}
+              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 rounded-xl p-4 border-2 border-yellow-300/50 hover:border-yellow-400 transition-all hover:shadow-md">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-yellow-400/20 rounded-lg">
+                    <Zap className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-yellow-700/70 mb-1">EXP Total Acumulado</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="font-bold text-2xl text-yellow-700">{totalExp}</p>
+                      <span className="text-sm text-yellow-600/70">EXP</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Racha Actual - Destacado */}
+              <div className="bg-gradient-to-br from-orange-50 to-red-50/50 rounded-xl p-4 border-2 border-orange-300/50 hover:border-orange-400 transition-all hover:shadow-md">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-orange-400/20 rounded-lg">
+                    <Flame className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-orange-700/70 mb-1">Racha de Aprendizaje</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="font-bold text-2xl text-orange-600">{currentStreak}</p>
+                      <span className="text-sm text-orange-500/70">días</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ====== 2. PROGRESO GENERAL Y META SEMANAL (Segundo) ====== */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
             className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
             {/* Overall Progress */}
@@ -210,11 +216,72 @@ const StudentProgressProfile = ({
             </Card>
           </motion.div>
 
+          {/* ====== 3. DINOSAURIO (Tercero) ====== */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+          >
+            <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100/30 border-2 border-yellow-400/50 shadow-lg">
+              <CardContent className="p-6 sm:p-8">
+                {/* Contenedor vertical centrado - SIN animaciones flotantes */}
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.8, duration: 0.6, ease: "backOut" }}
+                  className="flex flex-col items-center gap-4 sm:gap-6"
+                >
+                  {/* 1. EXP Total - Arriba */}
+                  <div className="flex justify-center">
+                    <Badge className="bg-yellow-500 text-white px-4 py-2 text-sm sm:text-base font-bold shadow-lg">
+                      <Star className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      {totalExp} EXP
+                    </Badge>
+                  </div>
+
+                  {/* 2. Dinosaurio - Centro */}
+                  <div className="transform scale-100 sm:scale-105">
+                    <StudentCharacter3D 
+                      progress={dinosaurProgress} 
+                      size="md"
+                      showProgressText={false}
+                    />
+                  </div>
+
+                  {/* 3. Progreso % - Debajo del dinosaurio */}
+                  <div className="text-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-foreground">
+                      {dinosaurProgress}%
+                    </p>
+                    <p className="text-sm sm:text-base text-muted-foreground font-medium">
+                      Completado
+                    </p>
+                  </div>
+
+                  {/* 4. Trofeos y Racha - Abajo en fila */}
+                  <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                    {/* Trofeo / Lecciones */}
+                    <Badge className="bg-green-500 text-white px-3 py-2 text-sm sm:text-base font-bold shadow-lg">
+                      <Trophy className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      {completedLessons}/{totalLessons}
+                    </Badge>
+
+                    {/* Racha */}
+                    <Badge className="bg-orange-500 text-white px-3 py-2 text-sm sm:text-base font-bold shadow-lg">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      {currentStreak} días
+                    </Badge>
+                  </div>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           {/* Evolution Stages Indicator */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
+            transition={{ delay: 0.9, duration: 0.5 }}
           >
             <Card className="bg-gradient-to-r from-accent/10 to-primary/10 border-accent/20">
               <CardContent className="p-4 sm:p-6">
