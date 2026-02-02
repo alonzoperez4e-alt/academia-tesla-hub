@@ -72,14 +72,14 @@ const initialWeeksData: Record<string, Week[]> = {
       lessons: [
         { 
           id: "l1-1", 
-          name: "Comprensión Lectora I", 
-          description: "Técnicas fundamentales de lectura", 
+          name: "SINTAXIS", 
+          description: " ", 
           questionsCount: 5 
         },
         { 
           id: "l1-2", 
-          name: "Comprensión Lectora II", 
-          description: "Análisis de textos complejos", 
+          name: "SUSTANTIVO", 
+          description: " ", 
           questionsCount: 5 
         },
       ] 
@@ -90,8 +90,8 @@ const initialWeeksData: Record<string, Week[]> = {
       lessons: [
         { 
           id: "l2-1", 
-          name: "Reglas Ortográficas", 
-          description: "Domina las reglas de ortografía", 
+          name: " VERBO ", 
+          description: " ", 
           questionsCount: 4 
         },
         { 
@@ -127,8 +127,8 @@ const mockLessonDetails: Record<string, {
 }> = {
   "l1-1": {
     id: "l1-1",
-    name: "Comprensión Lectora I",
-    description: "Técnicas fundamentales de lectura",
+    name: "SINTAXIS",
+    description: " ",
     questions: [
       { id: "q1", text: "¿Cuál es el sinónimo de 'efímero'?", options: ["Eterno", "Pasajero", "Sólido", "Firme"], correctAnswer: 1, solutionText: "Efímero significa pasajero, transitorio." },
       { id: "q2", text: "El texto instructivo se caracteriza por:", options: ["Narrar hechos", "Dar órdenes o pasos", "Describir lugares", "Argumentar ideas"], correctAnswer: 1 },
@@ -136,8 +136,8 @@ const mockLessonDetails: Record<string, {
   },
   "l1-2": {
     id: "l1-2",
-    name: "Comprensión Lectora II",
-    description: "Análisis de textos complejos",
+    name: "SUSTANTIVO",
+    description: " ",
     questions: [
       { id: "q3", text: "La personificación consiste en:", options: ["Comparar dos cosas", "Dar cualidades humanas a objetos", "Exagerar algo", "Repetir palabras"], correctAnswer: 1 },
     ],

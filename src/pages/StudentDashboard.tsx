@@ -12,6 +12,8 @@ import { QuizModal, QuizQuestion } from "@/components/student/QuizModal";
 import { Construction, User, LogOut, IdCard, GraduationCap, Flame, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { el } from "date-fns/locale";
+import { a } from "vitest/dist/chunks/suite.d.FvehnV49.js";
 
 // Mock data for lessons with quizzes
 const mockLessons: Record<string, { 
@@ -25,79 +27,114 @@ const mockLessons: Record<string, {
 }> = {
   "w1-leccion1": {
     id: "w1-leccion1",
-    title: "Comprensión Lectora I",
+    title: "Sintaxis",
     description: "Técnicas fundamentales para analizar textos.",
     completedAttempts: 2,
     bestScore: 8,
     totalQuestions: 10,
     questions: [
       {
-        id: "q1",
-        text: "¿Cuál es el sinónimo de 'efímero'?",
-        options: ["Eterno", "Pasajero", "Sólido", "Firme"],
-        correctAnswer: 1,
-        solutionText: "Efímero significa que dura poco tiempo, por lo tanto su sinónimo es 'Pasajero'.",
-      },
+  id: "q1",
+  text: `Analiza el siguiente párrafo:
+
+"El sargento echaba una ojeada a la Madre Patrocinio y el
+moscardón sigue allí. 
+
+La lancha cabecea sobre las aguas turbias,
+entre dos murallas de árboles que exhalan un vaho quemante,
+pegajoso. 
+
+Ovillados bajo el pamacari, desnudos de la cintura para
+arriba, los guardias duermen abrigados por el verdoso, amarillento
+sol del mediodía; la cabeza de Chiquito yace sobre el vientre
+pesado; el Rubio transpira a chorros; el Oscuro gruñe boca abierta. 
+
+Una sombrilla de jejenes escolta la lancha; entre los cuerpos
+evolucionan mariposas, avispas, moscas gordas".
+
+En el texto aparecen ............... oraciones.`,
+  options: ["dos", "tres", "cuatro", "cinco", "seis"],
+  correctAnswer: 2,
+  solutionText: `Una oración gramatical es una unidad de sentido completo que, por lo general, termina con un punto. Si contamos los puntos en el texto, encontramos cuatro:
+
+1) El sargento echaba una ojeada a la Madre Patrocinio y el moscardón sigue allí.
+
+2) La lancha cabecea sobre las aguas turbias, entre dos murallas de árboles que exhalan un vaho quemante, pegajoso.
+
+3) Ovillados bajo el pamacari, desnudos de la cintura para arriba, los guardias duermen abrigados por el verdoso, amarillento sol del mediodía; la cabeza de Chiquito yace sobre el vientre pesado; el Rubio transpira a chorros; el Oscuro gruñe boca abierta.
+
+4) Una sombrilla de jejenes escolta la lancha; entre los cuerpos evolucionan mariposas, avispas, moscas gordas.`
+},
+
+
       {
         id: "q2",
-        text: "Identifica el tipo de texto: 'La receta indica mezclar todos los ingredientes...'",
-        options: ["Narrativo", "Instructivo", "Descriptivo", "Argumentativo"],
-        correctAnswer: 1,
-        solutionText: "Es un texto instructivo porque da indicaciones paso a paso.",
+        text: "La primera oración del texto anterior: “El sargento echaba una ojeada a la Madre Patrocinio y el moscardón sigue allí” es:",
+        options: ["Simple", "Compuesta yuxtapuesta", "Compuesta coordinada copulativa", "Compuesta coordinada disyuntiva", "Compuesta coordinada adversativa"],
+        correctAnswer: 2,
+        solutionText: 'La oración "El sargento echaba una ojeada a la Madre Patrocinio y el moscardón sigue allí" es compuesta porque tiene dos verbos conjugados: echaba y sigue. Está formada por dos proposiciones unidas por el nexo "y". El nexo "y" es una conjunción coordinante copulativa, ya que su función es sumar o añadir información.',
       },
       {
         id: "q3",
-        text: "¿Qué figura literaria se usa en 'El viento susurraba secretos'?",
-        options: ["Metáfora", "Símil", "Personificación", "Hipérbole"],
-        correctAnswer: 2,
-        solutionText: "Es personificación porque se le atribuye una acción humana (susurrar) a un elemento no humano (el viento).",
-      },
+        text: `En el mismo texto "guardias" funciona sintácticamente como:
+"Ovillados bajo el pamacari, desnudos de la cintura para arriba, los guardias duermen abrigados por el verdoso, amarillento sol del mediodía"`,
+        options: ["Núcleo del sujeto", "Complemento directo", "Objeto indirecto", "Complemento agente", "Circunstancial"],
+        correctAnswer: 0,
+        solutionText: 'En la oración "...los guardias duermen...", realizamos la pregunta al verbo: ¿Quiénes duermen? La respuesta es "los guardias". Por lo tanto, "los guardias" es el sujeto de la oración. La palabra más importante dentro del sujeto, el sustantivo, es "guardias", que funciona como el núcleo del sujeto.',
+        },
     ],
   },
   "w1-leccion2": {
     id: "w1-leccion2",
-    title: "Comprensión Lectora II",
-    description: "Análisis de textos más complejos.",
+    title: "SUSTANTIVO",
+    description: " ",
     completedAttempts: 1,
     bestScore: 9,
     totalQuestions: 10,
     questions: [
       {
         id: "q4",
-        text: "¿Cuál es el antónimo de 'prolijo'?",
-        options: ["Ordenado", "Descuidado", "Meticuloso", "Esmerado"],
-        correctAnswer: 1,
-        solutionText: "Prolijo significa cuidadoso y detallado, su antónimo es 'Descuidado'.",
+        text: 'En la última proposición del texto, “Una sombrilla de jejenes escolta la lancha; entre los cuerpos evolucionan mariposas, avispas, moscas gordas". se observa una sucesión de:',
+        options: ["Sustantivos", "Adjetivos", "Proposiciones", "Verbos", "Adverbios"],
+        correctAnswer: 0,
+        solutionText: 'La última parte de la oración es "...evolucionan mariposas, avispas, moscas gordas". Las palabras "mariposas", "avispas" y "moscas" son sustantivos, ya que nombran a seres (en este caso, insectos). Forman una enumeración de sustantivos.',
       },
       {
         id: "q5",
-        text: "El texto que busca convencer al lector es de tipo:",
-        options: ["Narrativo", "Expositivo", "Argumentativo", "Descriptivo"],
-        correctAnswer: 2,
-        solutionText: "Los textos argumentativos buscan persuadir o convencer al lector de una postura.",
+        text: 'En la última oración "la lancha" actúa como:                                                                                          “Una sombrilla de jejenes escolta la lancha; entre los cuerpos evolucionan mariposas, avispas, moscas gordas"',
+        options: ["Circunstancial", "Complemento directo", "Complemento indirecto", "Predicativo", "Modificador Directo"],
+        correctAnswer: 1,
+        solutionText: 'La oración es "Una sombrilla de jejenes escolta la lancha". Para identificar el complemento directo (CD), preguntamos al verbo: ¿Qué escolta la sombrilla de jejenes? La respuesta es "la lancha". Además, podemos reemplazarlo por el pronombre "la": "Una sombrilla de jejenes la escolta". Esta sustitución confirma que es el CD. ',
       },
     ],
   },
   "w2-leccion1": {
     id: "w2-leccion1",
-    title: "Reglas Ortográficas",
-    description: "Domina las reglas esenciales de ortografía.",
+    title: "VERBO",
+    description: " ",
     completedAttempts: 0,
     bestScore: 0,
     totalQuestions: 10,
     questions: [
       {
         id: "q6",
-        text: "¿Cuál palabra está correctamente escrita?",
-        options: ["Excelente", "Exelente", "Excellente", "Ecselente"],
-        correctAnswer: 0,
+        text: 'En el siguiente texto: Cuando Raquel se lastimó el pie, Julio se asustó tanto que se desmayó y su hijita que se distraía en el parque corrió a ver a su padre para ayudarlo a levantarse. El número de verbos cuasirreflejos que encontramos es:',
+        options: ["2", "3", "4", "5", "6"],
+        correctAnswer: 2,
+        solutionText: `Un verbo cuasirreflejo es aquel en el que el pronombre (me, te, se) no cumple una función sintáctica de objeto directo o indirecto, sino que es parte de la estructura del verbo, usualmente indicando un proceso o cambio en el sujeto. Los verbos son: se asustó: La acción de asustarse no recae sobre Julio como un objeto, sino que expresa un cambio de estado. se desmayó: Es una acción intransitiva, el pronombre es parte inherente del verbo. se distraía: Indica un proceso que ocurre en el sujeto. levantarse: El pronombre "se" indica que la acción de levantar la realiza el propio sujeto. El verbo "se lastimó el pie" se considera reflexivo, no cuasirreflejo`,
+
       },
       {
         id: "q7",
-        text: "Las palabras agudas llevan tilde cuando:",
-        options: ["Siempre", "Terminan en n, s o vocal", "Nunca", "Terminan en consonante"],
+        text: `Presentan verbos auxiliares:
+1. Ella ha besado con mucha pasión a Julio.
+2. María fue a ver a sus notas a la Universidad.
+3. El ladrón fue capturado por el policía.
+4. Los profesores son explotados por el gobierno.
+5. Hubo terribles lamentos.`,
+        options: ["Todas", "1,3 y 4", "1,2 y 5", "2,3 y 4", "1 y 4"],
         correctAnswer: 1,
-        solutionText: "Las palabras agudas llevan tilde cuando terminan en n, s o vocal.",
+        solutionText: `Un verbo auxiliar ayuda a formar tiempos compuestos (haber + participio) o la voz pasiva (ser + participio). ha besado: "ha" es auxiliar del verbo haber. ✅      fue a ver: "fue" es el verbo principal (verbo ir), no un auxiliar. ❌     fue capturado: "fue" es auxiliar del verbo ser para formar la voz pasiva. ✅           son explotados: "son" es auxiliar del verbo ser para formar la voz pasiva. ✅           Hubo terribles lamentos: "hubo" es el verbo principal (impersonal). ❌`,
       },
     ],
   },
@@ -113,8 +150,8 @@ const mockWeekSections = [
       {
         id: "w1-leccion1",
         type: "leccion" as const,
-        title: "Comprensión Lectora I",
-        description: "Técnicas fundamentales para analizar textos.",
+        title: "SINTAXIS",
+        description: " ",
         isCompleted: true,
         isLocked: false,
         isCurrent: false,
@@ -124,8 +161,8 @@ const mockWeekSections = [
       {
         id: "w1-leccion2",
         type: "leccion" as const,
-        title: "Comprensión Lectora II",
-        description: "Análisis de textos más complejos.",
+        title: "SUSTANTIVO",
+        description: " ",
         isCompleted: true,
         isLocked: false,
         isCurrent: false,
@@ -142,8 +179,8 @@ const mockWeekSections = [
       {
         id: "w2-leccion1",
         type: "leccion" as const,
-        title: "Reglas Ortográficas",
-        description: "Domina las reglas esenciales de ortografía.",
+        title: "VERBO",
+        description: " ",
         isCompleted: false,
         isLocked: false,
         isCurrent: true,
@@ -267,7 +304,7 @@ const StudentDashboard = () => {
 
   // Gamification stats (removed lives)
   const [stats, setStats] = useState({
-    currentStreak: 7,
+    currentStreak: 25,
     gems: 2500,
   });
 
