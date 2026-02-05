@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Clock, CheckCircle2, XCircle, ArrowRight, RotateCcw } from "lucide-react";
+import { X, Clock, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -10,14 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { ResultadoEvaluacionDTO, FeedbackPreguntaDTO } from "@/types/api.types";
 
 export interface QuizQuestion {
   id: string;
   text: string;
   options: string[];
-  correctAnswer: number;
-  solutionText?: string;
-  solutionImage?: string;
+  /** IDs reales de las alternativas del backend */
+  alternativaIds: number[];
+  // correctAnswer ya no se usa localmente; la corrección viene del backend
 }
 
 interface QuizModalProps {
@@ -25,16 +26,19 @@ interface QuizModalProps {
   onClose: () => void;
   lessonTitle: string;
   questions: QuizQuestion[];
-  onComplete: (score: number, isFirstAttempt: boolean) => void;
-  timePerQuestion?: number; // in seconds, default 180 (3 min)
-  isFirstAttempt: boolean;
+  /**
+   * Callback que recibe las respuestas seleccionadas (questionId → índice de opción).
+   * El padre se encarga de enviarlas al backend y retornar el resultado.
+   */
+  onComplete: (selectedAnswers: Record<string, number>) => Promise<ResultadoEvaluacionDTO | null>;
+  timePerQuestion?: number;
 }
 
-interface QuizResult {
+interface QuizResultItem {
   questionId: string;
-  selectedAnswer: number;
-  isCorrect: boolean;
+  selectedAnswerIndex: number;
   question: QuizQuestion;
+  feedback: FeedbackPreguntaDTO | null;
 }
 
 export const QuizModal = ({
@@ -44,27 +48,26 @@ export const QuizModal = ({
   questions,
   onComplete,
   timePerQuestion = 180,
-  isFirstAttempt,
 }: QuizModalProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(timePerQuestion);
-  const [quizCompleted, setQuizCompleted] = useState(false);
-  const [results, setResults] = useState<QuizResult[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showingResults, setShowingResults] = useState(false);
+  const [resultado, setResultado] = useState<ResultadoEvaluacionDTO | null>(null);
+  const [resultItems, setResultItems] = useState<QuizResultItem[]>([]);
 
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
 
   // Timer logic
   useEffect(() => {
-    if (!isOpen || quizCompleted || showingResults) return;
+    if (!isOpen || showingResults || isSubmitting) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          // Auto-submit current answer or skip
           handleNextQuestion();
           return timePerQuestion;
         }
@@ -73,7 +76,7 @@ export const QuizModal = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen, currentQuestionIndex, quizCompleted, showingResults]);
+  }, [isOpen, currentQuestionIndex, showingResults, isSubmitting]);
 
   // Reset timer when question changes
   useEffect(() => {
@@ -81,7 +84,6 @@ export const QuizModal = ({
   }, [currentQuestionIndex, timePerQuestion]);
 
   const handleNextQuestion = useCallback(() => {
-    // Save answer
     if (selectedAnswer !== null) {
       setAnswers((prev) => ({
         ...prev,
@@ -93,29 +95,46 @@ export const QuizModal = ({
       setCurrentQuestionIndex((prev) => prev + 1);
       setSelectedAnswer(null);
     } else {
-      // Quiz completed
-      completeQuiz();
+      submitQuiz();
     }
   }, [selectedAnswer, currentQuestionIndex, totalQuestions, currentQuestion]);
 
-  const completeQuiz = () => {
-    const finalAnswers = {
+  const submitQuiz = async () => {
+    const finalAnswers: Record<string, number> = {
       ...answers,
-      ...(selectedAnswer !== null && { [currentQuestion.id]: selectedAnswer }),
+      ...(selectedAnswer !== null && currentQuestion
+        ? { [currentQuestion.id]: selectedAnswer }
+        : {}),
     };
 
-    const quizResults: QuizResult[] = questions.map((q) => ({
-      questionId: q.id,
-      selectedAnswer: finalAnswers[q.id] ?? -1,
-      isCorrect: finalAnswers[q.id] === q.correctAnswer,
-      question: q,
-    }));
+    setIsSubmitting(true);
 
-    const score = quizResults.filter((r) => r.isCorrect).length;
-    setResults(quizResults);
-    setQuizCompleted(true);
-    setShowingResults(true);
-    onComplete(score, isFirstAttempt);
+    try {
+      // Delegar al padre: envía respuestas al backend y retorna ResultadoEvaluacionDTO
+      const result = await onComplete(finalAnswers);
+      setResultado(result);
+
+      // Mapear feedback del backend a cada pregunta
+      const items: QuizResultItem[] = questions.map((q) => {
+        const fb = result?.feedback?.find(
+          (f) => String(f.idPregunta) === q.id
+        ) ?? null;
+
+        return {
+          questionId: q.id,
+          selectedAnswerIndex: finalAnswers[q.id] ?? -1,
+          question: q,
+          feedback: fb,
+        };
+      });
+
+      setResultItems(items);
+      setShowingResults(true);
+    } catch (error) {
+      console.error("Error al enviar quiz:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -129,9 +148,10 @@ export const QuizModal = ({
     setSelectedAnswer(null);
     setAnswers({});
     setTimeLeft(timePerQuestion);
-    setQuizCompleted(false);
-    setResults([]);
+    setIsSubmitting(false);
     setShowingResults(false);
+    setResultado(null);
+    setResultItems([]);
     onClose();
   };
 
@@ -141,11 +161,35 @@ export const QuizModal = ({
     return "text-foreground";
   };
 
+  /** Obtiene el texto de la alternativa correcta usando el feedback del backend */
+  const getCorrectAnswerText = (item: QuizResultItem): string => {
+    if (!item.feedback) return "—";
+    const correctAltId = item.feedback.idAlternativaCorrecta;
+    const correctIndex = item.question.alternativaIds.indexOf(correctAltId);
+    if (correctIndex >= 0 && correctIndex < item.question.options.length) {
+      return item.question.options[correctIndex];
+    }
+    return "—";
+  };
+
+  /** Verifica si la respuesta del alumno fue correcta */
+  const isAnswerCorrect = (item: QuizResultItem): boolean => {
+    return item.feedback?.correcta ?? false;
+  };
+
   if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border p-0">
+        {/* ─── Submitting overlay ─── */}
+        {isSubmitting && (
+          <div className="absolute inset-0 bg-card/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 rounded-lg">
+            <Loader2 className="w-10 h-10 animate-spin text-primary mb-3" />
+            <p className="text-muted-foreground font-medium">Enviando respuestas...</p>
+          </div>
+        )}
+
         {!showingResults ? (
           <>
             {/* Quiz Header */}
@@ -163,12 +207,6 @@ export const QuizModal = ({
                 </div>
               </div>
               <Progress value={((currentQuestionIndex + 1) / totalQuestions) * 100} className="h-2" />
-              {!isFirstAttempt && (
-                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                  <RotateCcw className="w-3 h-3" />
-                  Este intento no suma puntos al ranking
-                </p>
-              )}
             </div>
 
             {/* Question Content */}
@@ -223,7 +261,7 @@ export const QuizModal = ({
             <div className="sticky bottom-0 bg-card border-t border-border p-4">
               <Button
                 onClick={handleNextQuestion}
-                disabled={selectedAnswer === null}
+                disabled={selectedAnswer === null || isSubmitting}
                 className="w-full btn-tesla-accent"
               >
                 {currentQuestionIndex < totalQuestions - 1 ? (
@@ -238,7 +276,7 @@ export const QuizModal = ({
             </div>
           </>
         ) : (
-          /* Results View */
+          /* ─── Results View (feedback del backend) ─── */
           <>
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-2xl">Resultados del Quiz</DialogTitle>
@@ -248,12 +286,22 @@ export const QuizModal = ({
               {/* Score Summary */}
               <div className="text-center p-6 bg-secondary rounded-2xl">
                 <div className="text-5xl font-bold text-primary mb-2">
-                  {results.filter((r) => r.isCorrect).length}/{totalQuestions}
+                  {resultado?.puntajeObtenido ?? 0}/{totalQuestions}
                 </div>
                 <p className="text-muted-foreground">Respuestas correctas</p>
-                {isFirstAttempt && (
+
+                {resultado && resultado.expGanada > 0 && (
                   <p className="text-sm text-success mt-2">
-                    +{results.filter((r) => r.isCorrect).length * 10} puntos añadidos al ranking
+                    +{resultado.expGanada} EXP ganada
+                  </p>
+                )}
+
+                {resultado && (
+                  <p className={cn(
+                    "text-sm font-medium mt-1",
+                    resultado.leccionAprobada ? "text-success" : "text-orange-500"
+                  )}>
+                    {resultado.leccionAprobada ? "¡Lección aprobada! 🎉" : "No aprobaste esta vez. ¡Inténtalo de nuevo!"}
                   </p>
                 )}
               </div>
@@ -261,65 +309,73 @@ export const QuizModal = ({
               {/* Question Results List */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-foreground">Detalle de respuestas</h4>
-                {results.map((result, index) => (
-                  <motion.div
-                    key={result.questionId}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className={cn(
-                      "p-4 rounded-xl border-2",
-                      result.isCorrect
-                        ? "border-success/30 bg-success/5"
-                        : "border-destructive/30 bg-destructive/5"
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      {result.isCorrect ? (
-                        <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
-                      ) : (
-                        <XCircle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
+                {resultItems.map((item, index) => {
+                  const correct = isAnswerCorrect(item);
+                  const selectedText =
+                    item.selectedAnswerIndex >= 0 && item.selectedAnswerIndex < item.question.options.length
+                      ? item.question.options[item.selectedAnswerIndex]
+                      : "Sin respuesta";
+
+                  return (
+                    <motion.div
+                      key={item.questionId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={cn(
+                        "p-4 rounded-xl border-2",
+                        correct
+                          ? "border-success/30 bg-success/5"
+                          : "border-destructive/30 bg-destructive/5"
                       )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground mb-2">
-                          {index + 1}. {result.question.text}
-                        </p>
-                        
-                        {result.isCorrect ? (
-                          <p className="text-sm text-success">
-                            ✓ Respuesta correcta: {result.question.options[result.question.correctAnswer]}
-                          </p>
+                    >
+                      <div className="flex items-start gap-3">
+                        {correct ? (
+                          <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
                         ) : (
-                          <div className="space-y-2">
-                            <p className="text-sm text-destructive">
-                              ✗ Tu respuesta: {result.selectedAnswer >= 0 ? result.question.options[result.selectedAnswer] : "Sin respuesta"}
-                            </p>
-                            <p className="text-sm text-success">
-                              ✓ Respuesta correcta: {result.question.options[result.question.correctAnswer]}
-                            </p>
-                            
-                            {/* Solution */}
-                            {(result.question.solutionText || result.question.solutionImage) && (
-                              <div className="mt-3 p-3 bg-card rounded-lg border border-border">
-                                <p className="text-xs font-medium text-muted-foreground mb-2">Solución:</p>
-                                {result.question.solutionText && (
-                                  <p className="text-sm text-foreground">{result.question.solutionText}</p>
-                                )}
-                                {result.question.solutionImage && (
-                                  <img
-                                    src={result.question.solutionImage}
-                                    alt="Solución"
-                                    className="mt-2 rounded-lg max-h-48 object-contain"
-                                  />
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          <XCircle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
                         )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground mb-2">
+                            {index + 1}. {item.question.text}
+                          </p>
+
+                          {correct ? (
+                            <p className="text-sm text-success">
+                              ✓ Respuesta correcta: {getCorrectAnswerText(item)}
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              <p className="text-sm text-destructive">
+                                ✗ Tu respuesta: {selectedText}
+                              </p>
+                              <p className="text-sm text-success">
+                                ✓ Respuesta correcta: {getCorrectAnswerText(item)}
+                              </p>
+
+                              {/* Solución del backend */}
+                              {item.feedback && (item.feedback.solucionTexto || item.feedback.solucionImagenUrl) && (
+                                <div className="mt-3 p-3 bg-card rounded-lg border border-border">
+                                  <p className="text-xs font-medium text-muted-foreground mb-2">Solución:</p>
+                                  {item.feedback.solucionTexto && (
+                                    <p className="text-sm text-foreground">{item.feedback.solucionTexto}</p>
+                                  )}
+                                  {item.feedback.solucionImagenUrl && (
+                                    <img
+                                      src={item.feedback.solucionImagenUrl}
+                                      alt="Solución"
+                                      className="mt-2 rounded-lg max-h-48 object-contain"
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
 
               <Button onClick={handleClose} className="w-full btn-tesla-primary">
