@@ -136,8 +136,21 @@ const StudentDashboard = () => {
       setIsLoadingCursos(true);
       try {
         const data = await estudianteService.obtenerCursos();
-        setCursos(data);
-        const primerHabilitado = data.find((c) => c.isHabilitado);
+        console.log("Cursos data received:", data);
+        
+        // Verificación de seguridad por si el backend devuelve un objeto { data: [...] } o similar
+        let cursosArray: Curso[] = [];
+        if (Array.isArray(data)) {
+          cursosArray = data;
+        } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+          cursosArray = (data as any).data;
+        } else {
+            console.warn("Formato de cursos inesperado:", data);
+            cursosArray = [];
+        }
+
+        setCursos(cursosArray);
+        const primerHabilitado = cursosArray.find((c) => c.isHabilitado);
         if (primerHabilitado) setSelectedCursoId(primerHabilitado.idCurso);
       } catch (error) {
         console.error("Error al cargar cursos:", error);
