@@ -11,8 +11,6 @@ import ParentDashboard from "./pages/ParentDashboard";
 import NotFound from "./pages/NotFound";
 import TestComponent from "./test-component";
 
-import DinosaurGrowthTimeline from "./components/student/DinosaurGrowthTimeline";
-
 const queryClient = new QueryClient();
 
 const App = () => (

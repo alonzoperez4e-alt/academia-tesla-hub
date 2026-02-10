@@ -6,6 +6,7 @@ import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
 import { StreakMascot } from "@/components/gamification/StreakMascot";
 import StudentCharacter3D from "@/components/student/StudentCharacter3D";
+import { DinoMascot } from "@/components/student/DinoMascot";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import StudentMiniProfile from "@/components/student/StudentMiniProfile";
 import { QuizModal, QuizQuestion } from "@/components/student/QuizModal";
@@ -305,7 +306,7 @@ const StudentDashboard = () => {
   // Gamification stats (removed lives)
   const [stats, setStats] = useState({
     currentStreak: 25,
-    gems: 2500,
+    gems: 5000,
   });
 
   // Calculate overall progress
@@ -337,6 +338,14 @@ const StudentDashboard = () => {
       return Math.min(75 + Math.floor(((exp - 3750) / 1250) * 25), 100);
     }
   }, [stats.gems]);
+
+  // Calculate dinosaur stage from progress
+  const dinoStage = useMemo(() => {
+    if (dinosaurProgress < 25) return 'egg';
+    if (dinosaurProgress < 50) return 'cracking';
+    if (dinosaurProgress < 75) return 'hatching';
+    return 'grown';
+  }, [dinosaurProgress]);
 
   const totalLessons = useMemo(() => {
     return mockWeekSections.reduce((total, week) => total + week.lessons.length, 0);
@@ -474,14 +483,15 @@ const StudentDashboard = () => {
         return (
           <div className="pb-24 lg:pb-8 px-4 max-w-7xl mx-auto">
             {/* Overall Progress Character - Show on top of path */}
-            <div className="flex justify-center items-center py-6 w-full">
+            <div className="flex justify-center items-center py-4 w-full">
               <div className="text-center">
-                <StudentCharacter3D 
-                  progress={dinosaurProgress} 
-                  size="md"
-                  showProgressText={true}
-                />
-                <div className="mt-2 text-sm font-medium text-muted-foreground">
+                <div className="mb-1">
+                  <DinoMascot
+                    stage={dinoStage}
+                    size="lg"
+                  />
+                </div>
+                <div className="text-sm font-medium text-muted-foreground">
                   Crecimiento del dinosaurio: {Math.round(dinosaurProgress)}% ({stats.gems} EXP)
                 </div>
               </div>
