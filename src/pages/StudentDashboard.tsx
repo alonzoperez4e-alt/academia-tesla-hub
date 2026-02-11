@@ -126,7 +126,7 @@ const StudentDashboard = () => {
     }
     // Modificar en produccion para obtener el ID real
     const parsed = JSON.parse(userData);
-    setUser({ ...parsed, id: parsed.id ?? 1 });
+    setUser(parsed);
   }, [navigate]);
 
   // ─── Cargar cursos ─────────────────────────────────────────────────

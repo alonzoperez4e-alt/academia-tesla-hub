@@ -7,14 +7,7 @@ import { Label } from "@/components/ui/label";
 
 import logo from "@/elements/526536997_1332296692230643_53059892068269174_n.jpg";
 
-// Mock users database with roles
-const mockUsers = [
-  { code: "ALU001", password: "123456", role: "alumno", name: "Carlos Rodríguez", area: "Ingeniería" },
-  { code: "ALU002", password: "123456", role: "alumno", name: "María López", area: "Medicina" },
-  { code: "ADM001", password: "admin123", role: "admin", name: "Dr. María García", area: undefined },
-  { code: "PAD001", password: "padre123", role: "padre", name: "Roberto Rodríguez", studentCode: "ALU001", studentName: "Carlos Rodríguez" },
-  { code: "PAD002", password: "padre123", role: "padre", name: "Ana López", studentCode: "ALU002", studentName: "María López" },
-];
+import { loginService } from "@/services/loginService";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -29,25 +22,45 @@ const Login = () => {
     setIsLoading(true);
     setError("");
 
-    // Simulate login
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await loginService.LogearUsuario({
+        codigo: userCode,
+        password: password
+      });
 
-    const user = mockUsers.find(
-      (u) => u.code.toLowerCase() === userCode.toLowerCase() && u.password === password
-    );
+      if (response) {
+        // Map backend response to the structure expected by the dashboard (UserSession)
+        const sessionUser = {
+          token: response.token,
+          // Dashboard expects 'name' but backend returns 'nombre'
+          name: response.nombre,
+          // Dashboard expects 'role' but backend returns 'rol'
+          role: response.rol,
+          // Dashboard expects 'code'; use response.codigo if available, or fallback to input
+          code: response.codigo || userCode,
+          // Dashboard expects 'id' (number) for API calls
+          id: response.idUsuario 
+        };
 
-    if (user) {
-      // Store user data in sessionStorage for the session
-      sessionStorage.setItem("currentUser", JSON.stringify(user));
+        // Store user data in sessionStorage for the session
+        sessionStorage.setItem("currentUser", JSON.stringify(sessionUser));
+        
+        // Map backend roles to routes
+        const role = response.rol?.toLowerCase();
 
-      if (user.role === "alumno") {
-        navigate("/dashboard");
-      } else if (user.role === "admin") {
-        navigate("/admin");
-      } else if (user.role === "padre") {
-        navigate("/padre");
+        if (role === "alumno" || role === "estudiante") {
+          navigate("/dashboard");
+        } else if (role === "admin" || role === "administrador") {
+          navigate("/admin");
+        } else if (role === "padre" || role === "apoderado") {
+          navigate("/padre");
+        } else {
+          // Default fallback or error if role is unknown
+          setError("Rol de usuario no reconocido");
+        }
       }
-    } else {
+    } catch (err) {
+      console.error("Login error:", err);
       setError("Código de usuario o contraseña incorrectos");
     }
 

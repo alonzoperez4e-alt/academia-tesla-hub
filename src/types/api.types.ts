@@ -165,3 +165,28 @@ export type ContenidoLeccionResponse = CuestionarioDTO;
 
 /** POST /api/lecciones/{idLeccion}/finalizar */
 export type FinalizarLeccionResponse = ResultadoEvaluacionDTO;
+
+
+/** ========== LOGEO ========== */
+export interface AuthResponse {
+  token: string;
+  nombre: string;
+  rol: string;
+  codigo: string;
+  idUsuario:number;
+}
+
+export interface LoginRequest{
+  codigo: string;
+  password: string;
+}
+
+export interface RegisterRequest{
+  codigo: string;
+  nombre: string;
+  apellido: string;
+  password: string;
+  rol: string;
+  area: string;
+  tipoAlumno: string;
+}
