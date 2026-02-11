@@ -5,6 +5,7 @@ import { LearningPath } from "@/components/gamification/LearningPath";
 import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
 import StudentCharacter3D from "@/components/student/StudentCharacter3D";
+import { DinoMascot } from "@/components/student/DinoMascot";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import { QuizModal } from "@/components/student/QuizModal";
 import type { QuizQuestion } from "@/components/student/QuizModal";
