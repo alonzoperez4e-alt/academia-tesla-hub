@@ -62,6 +62,19 @@ export interface LeccionDTO {
   puntajeObtenido: number;
 }
 
+export type EstadoMascota =
+  | 'Huevo'
+  | 'Agrietándose'
+  | 'Naciendo'
+  | 'Completamente Crecido';
+
+export interface EstadisticasAlumnoDTO {
+  idUsuario: number;
+  rachaActual: number;
+  expTotal: number;
+  estadoMascota: EstadoMascota;
+}
+
 /** ========== Admin (DTOs de creación) ========== */
 
 export interface CrearCursoDTO {

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Target, TrendingUp, Star, User, IdCard, GraduationCap, Zap, Flame } from 'lucide-react';
+import type { EstadoMascota } from '@/types/api.types';
 
 interface StudentProgressProfileProps {
   userName: string;
@@ -16,6 +17,7 @@ interface StudentProgressProfileProps {
   weeklyGoal: number;
   userCode?: string;
   userArea?: string;
+  petState?: EstadoMascota;
 }
 
 const StudentProgressProfile = ({
@@ -28,7 +30,8 @@ const StudentProgressProfile = ({
   totalExp,
   weeklyGoal,
   userCode,
-  userArea
+  userArea,
+  petState
 }: StudentProgressProfileProps) => {
   
   // Get student level based on progress
@@ -43,6 +46,18 @@ const StudentProgressProfile = ({
 
   // Calculate progress towards weekly goal
   const weeklyProgress = Math.min((overallProgress / weeklyGoal) * 100, 100);
+
+  const resolvedPetState: EstadoMascota = petState ?? 'Huevo';
+
+  const stageConfig: { key: EstadoMascota; emoji: string; label: string; description: string }[] = [
+    { key: 'Huevo', emoji: '🥚', label: 'Huevo', description: '0-1249 EXP' },
+    { key: 'Agrietándose', emoji: '🐣', label: 'Agrietándose', description: '1250-2499 EXP' },
+    { key: 'Naciendo', emoji: '🦖', label: 'Naciendo', description: '2500-3749 EXP' },
+    { key: 'Completamente Crecido', emoji: '🦕', label: 'Completamente Crecido', description: '3750+ EXP' },
+  ];
+
+  const activeStageIndex = stageConfig.findIndex((stage) => stage.key === resolvedPetState);
+  const normalizedStageIndex = activeStageIndex === -1 ? 0 : activeStageIndex;
 
   return (
     <motion.div
@@ -232,10 +247,13 @@ const StudentProgressProfile = ({
                   className="flex flex-col items-center gap-4 sm:gap-6"
                 >
                   {/* 1. EXP Total - Arriba */}
-                  <div className="flex justify-center">
+                  <div className="flex justify-center gap-2">
                     <Badge className="bg-yellow-500 text-white px-4 py-2 text-sm sm:text-base font-bold shadow-lg">
                       <Star className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       {totalExp} EXP
+                    </Badge>
+                    <Badge className="bg-blue-500 text-white px-4 py-2 text-sm sm:text-base font-bold shadow-lg">
+                      {resolvedPetState}
                     </Badge>
                   </div>
 
@@ -291,19 +309,12 @@ const StudentProgressProfile = ({
                 
                 {/* Grid responsive: 2 columnas en móvil, 4 en desktop */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-                  {[
-                    { expMin: 0, expMax: 1249, emoji: "🥚", label: "Huevo", description: "0-1249 EXP" },
-                    { expMin: 1250, expMax: 2499, emoji: "🐣", label: "Rompiendo", description: "1250-2499 EXP" },
-                    { expMin: 2500, expMax: 3749, emoji: "🦖", label: "Creciendo", description: "2500-3749 EXP" },
-                    { expMin: 3750, expMax: 5000, emoji: "🦕", label: "Grande", description: "3750+ EXP" }
-                  ].map((stage, index) => {
-                    // Determinar el estado de la etapa basado en EXP
-                    const isCompleted = totalExp > stage.expMax;
-                    const isActive = totalExp >= stage.expMin && totalExp <= stage.expMax;
-                    const isPending = totalExp < stage.expMin;
-                    
+                  {stageConfig.map((stage, index) => {
+                    const isActive = index === normalizedStageIndex;
+                    const isCompleted = index < normalizedStageIndex;
+
                     return (
-                      <div key={stage.expMin} className="flex flex-col items-center">
+                      <div key={stage.key} className="flex flex-col items-center">
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}

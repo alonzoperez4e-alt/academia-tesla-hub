@@ -6,12 +6,14 @@ import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
 import StudentCharacter3D from "@/components/student/StudentCharacter3D";
 import { DinoMascot } from "@/components/student/DinoMascot";
+import type { DinoStage } from "@/components/student/DinoMascot";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import { QuizModal } from "@/components/student/QuizModal";
 import type { QuizQuestion } from "@/components/student/QuizModal";
 import { Construction, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { estudianteService } from "@/services/estudianteService";
+import { statsService } from "@/services/statsService";
 import type {
   Curso,
   CaminoCursoDTO,
@@ -19,6 +21,8 @@ import type {
   CuestionarioDTO,
   RespuestaAlumnoDTO,
   ResultadoEvaluacionDTO,
+  EstadisticasAlumnoDTO,
+  EstadoMascota,
 } from "@/types/api.types";
 
 // ─── Mock rankings (sin endpoint por ahora) ────────────────────────────
@@ -112,11 +116,28 @@ const StudentDashboard = () => {
   } | null>(null);
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
 
+  const refreshStudentStats = useCallback(async (idUsuario: number) => {
+    setIsLoadingStats(true);
+    try {
+      const data = await statsService.getStudentStats(idUsuario);
+      setStudentStats(data);
+      return data;
+    } catch (error) {
+      console.error("Error al cargar estadísticas del estudiante:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las estadísticas del estudiante.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsLoadingStats(false);
+    }
+  }, []);
+
   // Stats
-  const [stats, setStats] = useState({
-    currentStreak: 7,
-    gems: 0,
-  });
+  const [studentStats, setStudentStats] = useState<EstadisticasAlumnoDTO | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // ─── Auth ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -129,6 +150,12 @@ const StudentDashboard = () => {
     const parsed = JSON.parse(userData);
     setUser(parsed);
   }, [navigate]);
+
+  useEffect(() => {
+    if (user?.id) {
+      refreshStudentStats(user.id);
+    }
+  }, [user, refreshStudentStats]);
 
   // ─── Cargar cursos ─────────────────────────────────────────────────
   useEffect(() => {
@@ -171,11 +198,6 @@ const StudentDashboard = () => {
       try {
         const data = await estudianteService.obtenerCaminoCurso(selectedCursoId, user.id);
         setCamino(data);
-        const totalExp = data.semanas.reduce(
-          (sum, s) => sum + s.lecciones.reduce((a, l) => a + l.puntajeObtenido, 0),
-          0
-        );
-        setStats((prev) => ({ ...prev, gems: totalExp }));
       } catch (error) {
         console.error("Error al cargar camino:", error);
         toast({ title: "Error", description: "No se pudo cargar el contenido del curso.", variant: "destructive" });
@@ -192,6 +214,10 @@ const StudentDashboard = () => {
   }, [activeTab]);
 
   // ─── Datos derivados ──────────────────────────────────────────────
+  const totalExp = studentStats?.expTotal ?? 0;
+  const currentStreak = studentStats?.rachaActual ?? 0;
+  const petStateLabel = (studentStats?.estadoMascota ?? "Huevo") as EstadoMascota;
+
   const weekSections = useMemo(() => {
     if (!camino) return [];
     return mapSemanasToWeeks(camino.semanas);
@@ -203,13 +229,20 @@ const StudentDashboard = () => {
     return { totalLessons: total, completedLessons: completed, overallProgress: total > 0 ? Math.round((completed / total) * 100) : 0 };
   }, [weekSections]);
 
+  const dinoStage: DinoStage = useMemo(() => {
+    const stageMap: Record<EstadoMascota, DinoStage> = {
+      Huevo: "egg",
+      "Agrietándose": "cracking",
+      Naciendo: "hatching",
+      "Completamente Crecido": "grown",
+    };
+    return stageMap[petStateLabel] ?? "egg";
+  }, [petStateLabel]);
+
   const dinosaurProgress = useMemo(() => {
-    const exp = stats.gems;
-    if (exp < 1250) return Math.floor((exp / 1250) * 25);
-    if (exp < 2500) return 25 + Math.floor(((exp - 1250) / 1250) * 25);
-    if (exp < 3750) return 50 + Math.floor(((exp - 2500) / 1250) * 25);
-    return Math.min(75 + Math.floor(((exp - 3750) / 1250) * 25), 100);
-  }, [stats.gems]);
+    const cappedExp = Math.min(Math.max(totalExp, 0), 3750);
+    return Math.round((cappedExp / 3750) * 100);
+  }, [totalExp]);
 
   const currentWeek = useMemo(() => {
     return weekSections.find((w) => w.lessons.some((l) => l.isCurrent))?.week ?? 1;
@@ -219,13 +252,13 @@ const StudentDashboard = () => {
     if (!user) return { rankings: mockRankingsBase, userPosition: 4 };
     const allRankings = [
       ...mockRankingsBase,
-      { name: user.name, exp: stats.gems, isCurrentUser: true as const, trend: "up" as const },
+      { name: user.name, exp: totalExp, isCurrentUser: true as const, trend: "up" as const },
     ];
     allRankings.sort((a, b) => b.exp - a.exp);
     const rankedList = allRankings.map((e, i) => ({ ...e, position: i + 1 }));
     const userPos = rankedList.findIndex((e) => "isCurrentUser" in e && e.isCurrentUser) + 1;
     return { rankings: rankedList, userPosition: userPos };
-  }, [user, stats.gems]);
+  }, [user, totalExp]);
 
   const filteredWeeks = useMemo(() => {
     if (!searchQuery.trim()) return weekSections;
@@ -284,10 +317,7 @@ const StudentDashboard = () => {
           respuestas
         );
 
-        // Actualizar EXP
-        if (resultado.expGanada > 0) {
-          setStats((prev) => ({ ...prev, gems: prev.gems + resultado.expGanada }));
-        }
+        await refreshStudentStats(user.id);
 
         // Recargar camino
         if (selectedCursoId) {
@@ -307,7 +337,7 @@ const StudentDashboard = () => {
         return null;
       }
     },
-    [currentQuiz, user, selectedCursoId]
+    [currentQuiz, user, selectedCursoId, refreshStudentStats]
   );
 
   const handleCourseChange = useCallback(
@@ -361,11 +391,32 @@ const StudentDashboard = () => {
       case "path":
         return (
           <div className="pb-24 lg:pb-8 px-4 max-w-7xl mx-auto">
-            <div className="flex justify-center items-center py-6 w-full">
+            <div className="flex flex-col items-center gap-4 py-6 w-full">
               <div className="text-center">
                 <StudentCharacter3D progress={dinosaurProgress} size="md" showProgressText={true} />
                 <div className="mt-2 text-sm font-medium text-muted-foreground">
-                  Crecimiento del dinosaurio: {Math.round(dinosaurProgress)}% ({stats.gems} EXP)
+                  Crecimiento del dinosaurio: {Math.round(dinosaurProgress)}% ({totalExp} EXP)
+                </div>
+              </div>
+
+              <div className="w-full max-w-xl">
+                <div className="bg-card border border-border/60 rounded-2xl px-4 py-3 shadow-sm">
+                  {isLoadingStats ? (
+                    <div className="text-sm text-muted-foreground animate-pulse text-center">
+                      Actualizando mascota...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <DinoMascot stage={dinoStage} size="sm" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">{petStateLabel}</p>
+                        <div className="text-xs text-muted-foreground flex flex-wrap gap-3">
+                          <span>🔥 Racha: {currentStreak}</span>
+                          <span>✨ EXP: {totalExp}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -399,11 +450,12 @@ const StudentDashboard = () => {
               dinosaurProgress={dinosaurProgress}
               completedLessons={completedLessons}
               totalLessons={totalLessons}
-              currentStreak={stats.currentStreak}
-              totalExp={stats.gems}
+              currentStreak={currentStreak}
+              totalExp={totalExp}
               weeklyGoal={75}
               userCode={user.code}
               userArea={user.area}
+              petState={petStateLabel}
             />
           </div>
         );
@@ -427,8 +479,8 @@ const StudentDashboard = () => {
       <GamifiedStatusBar
         userName={user.name}
         userCode={user.code}
-        currentStreak={stats.currentStreak}
-        gems={stats.gems}
+        currentStreak={currentStreak}
+        gems={totalExp}
         selectedCourse={selectedCurso?.nombre ?? ""}
         onCourseChange={handleCourseChange}
         searchValue={searchQuery}
