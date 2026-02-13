@@ -1,6 +1,6 @@
 import type { RankingItemDTO } from "@/types/api.types";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_URL ?? "https://tesla-backend-ae28ecd7a6f3.herokuapp.com";
 
 export const rankingService = {
   async obtenerRanking(userId: number): Promise<RankingItemDTO[]> {
