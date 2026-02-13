@@ -48,35 +48,41 @@ interface UserSession {
 // ─── Helpers ───────────────────────────────────────────────────────────
 
 function mapSemanasToWeeks(semanas: SemanaDTO[]) {
-  return semanas.map((semana) => ({
-    week: semana.nroSemana,
-    title: `Semana ${semana.nroSemana}`,
-    isUnlocked: !semana.isBloqueada,
-    lessons: semana.lecciones.map((leccion, index) => {
-      const allPreviousCompleted = semana.lecciones
-        .slice(0, index)
-        .every((l) => l.completada);
+  const sortedWeeks = [...semanas].sort((a, b) => a.nroSemana - b.nroSemana);
 
-      const isCurrent =
-        !semana.isBloqueada && !leccion.completada && allPreviousCompleted;
+  return sortedWeeks.map((semana) => {
+    const sortedLessons = [...semana.lecciones].sort((a, b) => a.orden - b.orden);
 
-      const isLocked =
-        semana.isBloqueada ||
-        (index > 0 && !semana.lecciones[index - 1]?.completada && !leccion.completada);
+    return {
+      week: semana.nroSemana,
+      title: `Semana ${semana.nroSemana}`,
+      isUnlocked: !semana.isBloqueada,
+      lessons: sortedLessons.map((leccion, index) => {
+        const allPreviousCompleted = sortedLessons
+          .slice(0, index)
+          .every((l) => l.completada);
 
-      return {
-        id: String(leccion.idLeccion),
-        type: "leccion" as const,
-        title: leccion.nombre,
-        description: "",
-        isCompleted: leccion.completada,
-        isLocked,
-        isCurrent,
-        exp: leccion.puntajeObtenido,
-        completionRate: leccion.completada ? 100 : 0,
-      };
-    }),
-  }));
+        const isCurrent =
+          !semana.isBloqueada && !leccion.completada && allPreviousCompleted;
+
+        const isLocked =
+          semana.isBloqueada ||
+          (index > 0 && !sortedLessons[index - 1]?.completada && !leccion.completada);
+
+        return {
+          id: String(leccion.idLeccion),
+          type: "leccion" as const,
+          title: leccion.nombre,
+          description: "",
+          isCompleted: leccion.completada,
+          isLocked,
+          isCurrent,
+          exp: leccion.puntajeObtenido,
+          completionRate: leccion.completada ? 100 : 0,
+        };
+      }),
+    };
+  });
 }
 
 function mapCuestionarioToQuizQuestions(
