@@ -1,7 +1,7 @@
 import { api } from './api';
 import type { EstadisticasAlumnoDTO } from '@/types/api.types';
 
-const STATS_BASE_PATH = '/stats';
+const STATS_BASE_PATH = '/v1/stats';
 
 export const statsService = {
   getStudentStats: async (idUsuario: number): Promise<EstadisticasAlumnoDTO> => {
