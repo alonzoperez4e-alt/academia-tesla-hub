@@ -202,9 +202,7 @@ const Login = () => {
           <div className="mt-6 p-4 bg-secondary rounded-lg">
             <p className="text-xs text-muted-foreground text-center mb-2">Credenciales de prueba:</p>
             <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Alumno:</strong> ALU001 / 123456</p>
-              <p><strong>Admin:</strong> ADM001 / admin123</p>
-              <p><strong>Padre:</strong> PAD001 / padre123</p>
+              <p><strong>Contraseña:</strong> 1234 </p>
             </div>
           </div>
 
