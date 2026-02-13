@@ -14,6 +14,7 @@ import { Construction, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { estudianteService } from "@/services/estudianteService";
 import { statsService } from "@/services/statsService";
+import { rankingService } from "@/services/rankingService"; // ❶ NUEVO
 import type {
   Curso,
   CaminoCursoDTO,
@@ -23,18 +24,8 @@ import type {
   ResultadoEvaluacionDTO,
   EstadisticasAlumnoDTO,
   EstadoMascota,
+  RankingItemDTO, // ❶ NUEVO
 } from "@/types/api.types";
-
-// ─── Mock rankings (sin endpoint por ahora) ────────────────────────────
-const mockRankingsBase = [
-  { position: 1, name: "Ana Martínez", exp: 2450, trend: "same" as const },
-  { position: 2, name: "Luis García", exp: 2380, trend: "up" as const },
-  { position: 3, name: "María Fernández", exp: 2310, trend: "down" as const },
-  { position: 5, name: "Pedro Sánchez", exp: 2180, trend: "down" as const },
-  { position: 6, name: "Laura Díaz", exp: 2100, trend: "up" as const },
-  { position: 7, name: "Jorge Ruiz", exp: 2050, trend: "same" as const },
-  { position: 8, name: "Carmen López", exp: 1980, trend: "down" as const },
-];
 
 // ─── Tipos internos ────────────────────────────────────────────────────
 interface UserSession {
@@ -90,6 +81,13 @@ function mapCuestionarioToQuizQuestions(
   }));
 }
 
+/** Convierte la tendencia numérica del backend a string para el componente */
+function mapTrend(tendencia: number): "up" | "down" | "same" {
+  if (tendencia > 0) return "up";
+  if (tendencia < 0) return "down";
+  return "same";
+}
+
 // ─── Componente principal ──────────────────────────────────────────────
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -116,6 +114,14 @@ const StudentDashboard = () => {
   } | null>(null);
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
 
+  // Stats
+  const [studentStats, setStudentStats] = useState<EstadisticasAlumnoDTO | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  // ❸ Ranking (datos reales)
+  const [rankingData, setRankingData] = useState<RankingItemDTO[]>([]);
+  const [isLoadingRanking, setIsLoadingRanking] = useState(false);
+
   const refreshStudentStats = useCallback(async (idUsuario: number) => {
     setIsLoadingStats(true);
     try {
@@ -135,10 +141,6 @@ const StudentDashboard = () => {
     }
   }, []);
 
-  // Stats
-  const [studentStats, setStudentStats] = useState<EstadisticasAlumnoDTO | null>(null);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
-
   // ─── Auth ──────────────────────────────────────────────────────────
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -146,7 +148,6 @@ const StudentDashboard = () => {
       navigate("/login");
       return;
     }
-    // Modificar en produccion para obtener el ID real
     const parsed = JSON.parse(userData);
     setUser(parsed);
   }, [navigate]);
@@ -157,6 +158,30 @@ const StudentDashboard = () => {
     }
   }, [user, refreshStudentStats]);
 
+  // ─── Cargar ranking real ───────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const cargarRanking = async () => {
+      setIsLoadingRanking(true);
+      try {
+        const data = await rankingService.obtenerRanking(user.id);
+        setRankingData(data);
+      } catch (error) {
+        console.error("Error al cargar ranking:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo cargar el ranking.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingRanking(false);
+      }
+    };
+
+    cargarRanking();
+  }, [user]);
+
   // ─── Cargar cursos ─────────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
@@ -165,16 +190,15 @@ const StudentDashboard = () => {
       try {
         const data = await estudianteService.obtenerCursos();
         console.log("Cursos data received:", data);
-        
-        // Verificación de seguridad por si el backend devuelve un objeto { data: [...] } o similar
+
         let cursosArray: Curso[] = [];
         if (Array.isArray(data)) {
           cursosArray = data;
-        } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+        } else if (data && typeof data === "object" && "data" in data && Array.isArray((data as any).data)) {
           cursosArray = (data as any).data;
         } else {
-            console.warn("Formato de cursos inesperado:", data);
-            cursosArray = [];
+          console.warn("Formato de cursos inesperado:", data);
+          cursosArray = [];
         }
 
         setCursos(cursosArray);
@@ -226,7 +250,11 @@ const StudentDashboard = () => {
   const { totalLessons, completedLessons, overallProgress } = useMemo(() => {
     const total = weekSections.reduce((t, w) => t + w.lessons.length, 0);
     const completed = weekSections.reduce((c, w) => c + w.lessons.filter((l) => l.isCompleted).length, 0);
-    return { totalLessons: total, completedLessons: completed, overallProgress: total > 0 ? Math.round((completed / total) * 100) : 0 };
+    return {
+      totalLessons: total,
+      completedLessons: completed,
+      overallProgress: total > 0 ? Math.round((completed / total) * 100) : 0,
+    };
   }, [weekSections]);
 
   const dinoStage: DinoStage = useMemo(() => {
@@ -248,22 +276,45 @@ const StudentDashboard = () => {
     return weekSections.find((w) => w.lessons.some((l) => l.isCurrent))?.week ?? 1;
   }, [weekSections]);
 
-  const { rankings: mockRankings, userPosition } = useMemo(() => {
-    if (!user) return { rankings: mockRankingsBase, userPosition: 4 };
-    const allRankings = [
-      ...mockRankingsBase,
-      { name: user.name, exp: totalExp, isCurrentUser: true as const, trend: "up" as const },
-    ];
-    allRankings.sort((a, b) => b.exp - a.exp);
-    const rankedList = allRankings.map((e, i) => ({ ...e, position: i + 1 }));
-    const userPos = rankedList.findIndex((e) => "isCurrentUser" in e && e.isCurrentUser) + 1;
-    return { rankings: rankedList, userPosition: userPos };
-  }, [user, totalExp]);
+  // ─── Ranking derivado (datos reales) ───────────────────────────────
+  const { rankings, userPosition, userPreviousPosition, totalStudents } = useMemo(() => {
+    if (rankingData.length === 0) {
+      return { rankings: [], userPosition: 0, userPreviousPosition: 0, totalStudents: 0 };
+    }
+
+    const mappedRankings = rankingData.map((item) => ({
+      position: item.posicionActual,
+      name: item.nombreCompleto,
+      exp: item.expTotal,
+      isCurrentUser: item.esUsuarioActual,
+      trend: mapTrend(item.tendencia),
+      // Reconstruir posición anterior: tendencia = rankAnt - posActual → rankAnt = posActual + tendencia
+      previousPosition: item.posicionActual + item.tendencia,
+    }));
+
+    const currentUser = rankingData.find((item) => item.esUsuarioActual);
+    const userPos = currentUser?.posicionActual ?? 0;
+    const userPrevPos = currentUser
+      ? currentUser.posicionActual + currentUser.tendencia
+      : userPos;
+
+    return {
+      rankings: mappedRankings,
+      userPosition: userPos,
+      userPreviousPosition: userPrevPos,
+      totalStudents: rankingData.length,
+    };
+  }, [rankingData]);
 
   const filteredWeeks = useMemo(() => {
     if (!searchQuery.trim()) return weekSections;
     return weekSections
-      .map((w) => ({ ...w, lessons: w.lessons.filter((l) => l.title.toLowerCase().includes(searchQuery.toLowerCase())) }))
+      .map((w) => ({
+        ...w,
+        lessons: w.lessons.filter((l) =>
+          l.title.toLowerCase().includes(searchQuery.toLowerCase())
+        ),
+      }))
       .filter((w) => w.lessons.length > 0);
   }, [searchQuery, weekSections]);
 
@@ -292,11 +343,6 @@ const StudentDashboard = () => {
     }
   }, []);
 
-  /**
-   * El QuizModal llama esta función con las respuestas seleccionadas.
-   * Nosotros las enviamos al backend y retornamos el resultado
-   * para que el modal muestre el feedback.
-   */
   const handleQuizComplete = useCallback(
     async (selectedAnswers: Record<string, number>): Promise<ResultadoEvaluacionDTO | null> => {
       if (!currentQuiz || !user) return null;
@@ -323,6 +369,15 @@ const StudentDashboard = () => {
         if (selectedCursoId) {
           const caminoActualizado = await estudianteService.obtenerCaminoCurso(selectedCursoId, user.id);
           setCamino(caminoActualizado);
+        }
+
+        // Recargar ranking después de completar una lección (la EXP cambió)
+        try {
+          const rankingActualizado = await rankingService.obtenerRanking(user.id);
+          setRankingData(rankingActualizado);
+        } catch {
+          // No bloquear el flujo si falla el ranking
+          console.warn("No se pudo actualizar el ranking después del quiz.");
         }
 
         toast({
@@ -373,7 +428,9 @@ const StudentDashboard = () => {
         <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
           <Construction className="w-16 h-16 text-muted-foreground mb-4" />
           <h2 className="text-2xl font-semibold text-foreground mb-2">Curso Bloqueado</h2>
-          <p className="text-muted-foreground max-w-md">Este curso será habilitado por el administrador próximamente.</p>
+          <p className="text-muted-foreground max-w-md">
+            Este curso será habilitado por el administrador próximamente.
+          </p>
         </div>
       );
     }
@@ -434,10 +491,31 @@ const StudentDashboard = () => {
           </div>
         );
 
+      // ❹ RANKING CON DATOS REALES
       case "ranking":
         return (
           <div className="pb-24 lg:pb-8">
-            <RankingTab rankings={mockRankings} userPosition={userPosition} userPreviousPosition={6} totalStudents={45} />
+            {isLoadingRanking ? (
+              <div className="flex flex-col items-center justify-center h-[60vh]">
+                <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">Cargando ranking...</p>
+              </div>
+            ) : rankings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
+                <Construction className="w-16 h-16 text-muted-foreground mb-4" />
+                <h2 className="text-2xl font-semibold text-foreground mb-2">Sin datos de ranking</h2>
+                <p className="text-muted-foreground max-w-md">
+                  Aún no hay suficientes datos para mostrar el ranking. ¡Completa lecciones para aparecer!
+                </p>
+              </div>
+            ) : (
+              <RankingTab
+                rankings={rankings}
+                userPosition={userPosition}
+                userPreviousPosition={userPreviousPosition}
+                totalStudents={totalStudents}
+              />
+            )}
           </div>
         );
 
@@ -465,7 +543,9 @@ const StudentDashboard = () => {
           <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
             <Construction className="w-16 h-16 text-muted-foreground mb-4" />
             <h2 className="text-2xl font-semibold text-foreground mb-2">Próximamente</h2>
-            <p className="text-muted-foreground max-w-md">Esta sección estará disponible en las siguientes actualizaciones. ¡Mantente atento!</p>
+            <p className="text-muted-foreground max-w-md">
+              Esta sección estará disponible en las siguientes actualizaciones. ¡Mantente atento!
+            </p>
           </div>
         );
 

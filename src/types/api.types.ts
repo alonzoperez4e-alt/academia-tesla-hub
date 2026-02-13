@@ -203,3 +203,15 @@ export interface RegisterRequest{
   area: string;
   tipoAlumno: string;
 }
+
+/** ========== Ranking ========== */
+
+export interface RankingItemDTO {
+  idUsuario: number;
+  nombreCompleto: string;   
+  inicial: string;          
+  expTotal: number;         
+  posicionActual: number;   
+  tendencia: number;        
+  esUsuarioActual: boolean; 
+}
