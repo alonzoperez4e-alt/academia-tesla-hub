@@ -182,11 +182,12 @@ export type FinalizarLeccionResponse = ResultadoEvaluacionDTO;
 
 /** ========== LOGEO ========== */
 export interface AuthResponse {
-  token: string;
-  nombre: string;
-  rol: string;
-  codigo: string;
-  idUsuario:number;
+  accessToken: string;
+  role: string;
+  refreshToken?: string | null; // backend ahora puede no enviarlo en body
+  nombre?: string;
+  codigo?: string;
+  idUsuario?: number;
 }
 
 export interface LoginRequest{
@@ -199,7 +200,7 @@ export interface RegisterRequest{
   nombre: string;
   apellido: string;
   password: string;
-  rol: string;
+  role: string;
   area: string;
   tipoAlumno: string;
 }
