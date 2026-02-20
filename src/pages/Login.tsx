@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 
 import logo from "@/elements/526536997_1332296692230643_53059892068269174_n.jpg";
 
+import { authSession } from "@/services/authSession";
 import { loginService } from "@/services/loginService";
 
 const Login = () => {
@@ -29,33 +30,26 @@ const Login = () => {
       });
 
       if (response) {
-        // Map backend response to the structure expected by the dashboard (UserSession)
+        const normalizedRole = (response.role ?? "").trim().toLowerCase();
+        const profile = authSession.getProfile();
+
         const sessionUser = {
-          token: response.token,
-          // Dashboard expects 'name' but backend returns 'nombre'
-          name: response.nombre,
-          // Dashboard expects 'role' but backend returns 'rol'
-          role: response.rol,
-          // Dashboard expects 'code'; use response.codigo if available, or fallback to input
-          code: response.codigo || userCode,
-          // Dashboard expects 'id' (number) for API calls
-          id: response.idUsuario 
+          token: response.accessToken,
+          name: [profile.nombre, profile.apellido].filter(Boolean).join(" ").trim(),
+          role: normalizedRole,
+          code: profile.codigo || userCode,
+          id: profile.idUsuario ?? 0,
         };
 
-        // Store user data in sessionStorage for the session
         sessionStorage.setItem("currentUser", JSON.stringify(sessionUser));
-        
-        // Map backend roles to routes
-        const role = response.rol?.toLowerCase();
 
-        if (role === "alumno" || role === "estudiante") {
+        if (normalizedRole === "alumno" || normalizedRole === "estudiante") {
           navigate("/dashboard");
-        } else if (role === "admin" || role === "administrador") {
+        } else if (normalizedRole === "admin" || normalizedRole === "administrador") {
           navigate("/admin");
-        } else if (role === "padre" || role === "apoderado") {
+        } else if (normalizedRole === "padre" || normalizedRole === "apoderado") {
           navigate("/padre");
         } else {
-          // Default fallback or error if role is unknown
           setError("Rol de usuario no reconocido");
         }
       }
