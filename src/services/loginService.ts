@@ -11,7 +11,6 @@ export const loginService = {
     const data = response.data;
 
     const claims = decodeJwtClaims(data.accessToken);
-    console.log("Decoded JWT claims:", claims);
     const normalizedRole = normalizeRole(data.role ?? claims?.role ?? null);
 
     authSession.set(data.accessToken, normalizedRole, {
@@ -20,8 +19,6 @@ export const loginService = {
       apellido: claims?.apellido ?? null,
       codigo: claims?.sub ?? credentials.codigo ?? null,
     });
-
-    console.log("Session after login:", authSession.getProfile(), "Role:", authSession.getRole());
 
     return data;
   },

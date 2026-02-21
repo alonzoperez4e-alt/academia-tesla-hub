@@ -116,8 +116,6 @@ export interface Curso {
   nombre: string;
   descripcion: string;
   isHabilitado: boolean;
-  /** Swagger lo muestra como ["string"] (probablemente referencias/urls/ids). */
-  semanas: Semana[];
 }
 
 export interface Semana {
