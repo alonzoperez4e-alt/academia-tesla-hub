@@ -12,7 +12,7 @@ export const estudianteService = {
    * GET /api/estudiantes/cursos
    */
   obtenerCursos: async (): Promise<CursosResponse> => {
-    const response = await api.get<CursosResponse>('/estudiantes/cursos');
+    const response = await api.get<CursosResponse>('/courses');
     return response.data;
   },
 
@@ -21,7 +21,7 @@ export const estudianteService = {
    */
   obtenerCaminoCurso: async (cursoId: number, usuarioId: number): Promise<CaminoCursoDTO> => {
     const response = await api.get<CaminoCursoDTO>(
-      `/estudiantes/curso/${cursoId}/camino`,
+      `/courses/${cursoId}/path`,
       { params: { usuarioId } }
     );
     return response.data;
@@ -31,7 +31,7 @@ export const estudianteService = {
    * GET /api/lecciones/{idLeccion}/contenido
    */
   obtenerContenidoLeccion: async (idLeccion: number): Promise<CuestionarioDTO> => {
-    const response = await api.get<CuestionarioDTO>(`/lecciones/${idLeccion}/contenido`);
+    const response = await api.get<CuestionarioDTO>(`/lessons/${idLeccion}/quiz`);
     return response.data;
   },
 
@@ -46,7 +46,7 @@ export const estudianteService = {
     respuestas: RespuestaAlumnoDTO[]
   ): Promise<ResultadoEvaluacionDTO> => {
     const response = await api.post<ResultadoEvaluacionDTO>(
-      `/lecciones/${idLeccion}/finalizar`,
+      `/lessons/${idLeccion}/submit`,
       { idUsuario, respuestas }
     );
     return response.data;
