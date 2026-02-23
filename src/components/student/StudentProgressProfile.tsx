@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import StudentCharacter3D from './StudentCharacter3D';
+import StudentDinoGif from './StudentDinoGif';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -258,9 +258,10 @@ const StudentProgressProfile = ({
                   </div>
 
                   {/* 2. Dinosaurio - Centro */}
-                  <div className="transform scale-100 sm:scale-105">
-                    <StudentCharacter3D 
-                      progress={dinosaurProgress} 
+                  <div className="transform scale-100 sm:scale-105 w-full flex justify-center">
+                    <StudentDinoGif 
+                      exp={totalExp}
+                      progressPercent={dinosaurProgress} 
                       size="md"
                       showProgressText={false}
                     />

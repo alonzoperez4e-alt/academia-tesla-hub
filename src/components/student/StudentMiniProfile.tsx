@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import StudentCharacter3D from './StudentCharacter3D';
+import StudentDinoGif from './StudentDinoGif';
 import { Badge } from '@/components/ui/badge';
 
 interface StudentMiniProfileProps {
@@ -37,8 +37,9 @@ const StudentMiniProfile = ({
     >
       {/* Mini Character */}
       <div className="relative">
-        <StudentCharacter3D 
-          progress={dinosaurProgress} 
+        <StudentDinoGif 
+          exp={currentExp}
+          progressPercent={dinosaurProgress} 
           size="sm"
           showProgressText={false}
         />

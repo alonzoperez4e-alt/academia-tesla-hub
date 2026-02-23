@@ -1,7 +1,7 @@
-import { BookOpen, Play, FileText, Calculator, Atom, FlaskConical, Brain } from "lucide-react";
+import { BookOpen, FileText, Calculator, Atom, FlaskConical, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import StudentCharacter3D from "@/components/student/StudentCharacter3D";
+import StudentDinoGif from "@/components/student/StudentDinoGif";
 
 interface CourseCardProps {
   id: string;
@@ -41,6 +41,19 @@ export const CourseCard = ({
   const Icon = iconMap[icon] || iconMap.default;
   const gradientColor = colorMap[icon] || colorMap.default;
 
+  const mapExpToProgress = (value: number) => {
+    const clamped = Math.max(0, value);
+    if (clamped >= 3750) {
+      const span = Math.min(clamped, 5000) - 3750;
+      return Math.min(75 + (span / 1250) * 25, 100);
+    }
+    if (clamped >= 2500) return 50 + ((clamped - 2500) / 1250) * 25;
+    if (clamped >= 1250) return 25 + ((clamped - 1250) / 1250) * 25;
+    return (clamped / 1250) * 25;
+  };
+
+  const derivedExp = Math.round((progress / 100) * 5000);
+
   return (
     <div className="card-tesla p-6 group animate-fade-in">
       {/* Icon & Header */}
@@ -65,8 +78,9 @@ export const CourseCard = ({
       <div className="mb-4 flex items-center gap-4">
         {/* 3D Character */}
         <div className="flex-shrink-0">
-          <StudentCharacter3D 
-            progress={progress} 
+          <StudentDinoGif 
+            exp={derivedExp}
+            progressPercent={mapExpToProgress(derivedExp)} 
             size="sm" 
             showProgressText={false}
           />

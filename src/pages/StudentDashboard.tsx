@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Construction, Loader2 } from "lucide-react";
 
@@ -7,8 +7,7 @@ import { GamifiedStatusBar } from "@/components/gamification/GamifiedStatusBar";
 import { LearningPath } from "@/components/gamification/LearningPath";
 import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
-import StudentCharacter3D from "@/components/student/StudentCharacter3D";
-import { DinoMascot } from "@/components/student/DinoMascot";
+import StudentDinoGif from "@/components/student/StudentDinoGif";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import { QuizModal } from "@/components/student/QuizModal";
 
@@ -36,18 +35,25 @@ const StudentDashboard = () => {
   if (!user) return null;
 
   // Variables calculadas para la UI
+  const mapExpToProgress = (exp: number) => {
+    const clamped = Math.max(0, exp);
+    if (clamped >= 3750) {
+      const span = Math.min(clamped, 5000) - 3750;
+      return Math.min(75 + (span / 1250) * 25, 100);
+    }
+    if (clamped >= 2500) {
+      return 50 + ((clamped - 2500) / 1250) * 25;
+    }
+    if (clamped >= 1250) {
+      return 25 + ((clamped - 1250) / 1250) * 25;
+    }
+    return (clamped / 1250) * 25;
+  };
+
   const totalExp = state.studentStats?.expTotal ?? 0;
   const currentStreak = state.studentStats?.rachaActual ?? 0;
   const petStateLabel = state.studentStats?.estadoMascota ?? "Huevo";
-  const dinosaurProgress = Math.round((Math.min(Math.max(totalExp, 0), 3750) / 3750) * 100);
-  
-  const dinoStageMap: Record<string, "egg" | "cracking" | "hatching" | "grown"> = {
-    Huevo: "egg",
-    "Agrietándose": "cracking",
-    Naciendo: "hatching",
-    "Completamente Crecido": "grown",
-  };
-  const dinoStage = dinoStageMap[petStateLabel] ?? "egg";
+  const dinosaurProgress = Math.round(mapExpToProgress(totalExp));
 
   const currentWeek = state.weekSections.find((w) => w.lessons.some((l) => l.isCurrent))?.week ?? 1;
   const filteredWeeks = searchQuery.trim() 
@@ -78,28 +84,9 @@ const StudentDashboard = () => {
           <div className="pb-24 lg:pb-8 px-4 max-w-7xl mx-auto">
             <div className="flex flex-col items-center gap-4 py-6 w-full">
               <div className="text-center">
-                <StudentCharacter3D progress={dinosaurProgress} size="md" showProgressText={true} />
+                <StudentDinoGif exp={totalExp} progressPercent={dinosaurProgress} size="md" showProgressText={false} />
                 <div className="mt-2 text-sm font-medium text-muted-foreground">
                   Crecimiento: {dinosaurProgress}% ({totalExp} EXP)
-                </div>
-              </div>
-
-              <div className="w-full max-w-xl">
-                <div className="bg-card border border-border/60 rounded-2xl px-4 py-3 shadow-sm">
-                  {state.loading.stats ? (
-                    <div className="text-sm text-muted-foreground animate-pulse text-center">Actualizando mascota...</div>
-                  ) : (
-                    <div className="flex items-center gap-4">
-                      <DinoMascot stage={dinoStage} size="sm" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-foreground">{petStateLabel}</p>
-                        <div className="text-xs text-muted-foreground flex flex-wrap gap-3">
-                          <span>🔥 Racha: {currentStreak}</span>
-                          <span>✨ EXP: {totalExp}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
