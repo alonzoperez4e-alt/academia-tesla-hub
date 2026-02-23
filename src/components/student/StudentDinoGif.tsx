@@ -57,7 +57,7 @@ const StudentDinoGif = ({
       // Coloca aquí la URL MP4 (por etapa) del CDN/hosting externo para no servirlo desde el bundle.
       egg: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771864271/egg1_poqxvi.mp4", label: "Mascota etapa huevo" },
       cracking: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771864394/cracking1_js5lyl.mp4", label: "Mascota agrietándose" },
-      hatching: { src: "https://cdn.tu-dominio.com/dino/hatching.mp4", label: "Mascota naciendo" },
+      hatching: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771883596/CreciendoSopi-Picsart-BackgroundRemover_zpt6i7.mp4", label: "Mascota naciendo" },
       grown: { src: "https://cdn.tu-dominio.com/dino/grown.mp4", label: "Mascota completamente crecida" },
     };
 
