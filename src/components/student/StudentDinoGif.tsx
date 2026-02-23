@@ -11,7 +11,7 @@ interface StudentDinoGifProps {
   className?: string;
 }
 
-// Simple GIF renderer that swaps assets based on EXP.
+// Simple video renderer that swaps assets based on EXP.
 const StudentDinoGif = ({
   exp,
   progressPercent,
@@ -53,31 +53,46 @@ const StudentDinoGif = ({
   }, [exp, progressPercent]);
 
   const renderStage = () => {
-    const stageToFile: Record<DinoStage, { src: string; alt: string }> = {
-      egg: { src: "/assets/dino/egg.gif", alt: "Mascota etapa huevo" },
-      cracking: { src: "/assets/dino/cracking.gif", alt: "Mascota agrietándose" },
-      hatching: { src: "/assets/dino/hatching.gif", alt: "Mascota naciendo" },
-      grown: { src: "/assets/dino/grown.gif", alt: "Mascota completamente crecida" },
+    const stageToFile: Record<DinoStage, { src: string; label: string }> = {
+      // Coloca aquí la URL MP4 (por etapa) del CDN/hosting externo para no servirlo desde el bundle.
+      egg: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771864271/egg1_poqxvi.mp4", label: "Mascota etapa huevo" },
+      cracking: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771864394/cracking1_js5lyl.mp4", label: "Mascota agrietándose" },
+      hatching: { src: "https://cdn.tu-dominio.com/dino/hatching.mp4", label: "Mascota naciendo" },
+      grown: { src: "https://cdn.tu-dominio.com/dino/grown.mp4", label: "Mascota completamente crecida" },
     };
 
     const asset = stageToFile[stage];
 
     if (!loadError) {
       return (
-        <img
-          src={asset.src}
-          alt={asset.alt}
-          loading="lazy"
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-contain"
-          onError={() => setLoadError(true)}
-        />
+        <div
+          className="absolute inset-0 select-none"
+          style={{ pointerEvents: "none" }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <video
+            playsInline
+            autoPlay
+            loop
+            muted
+            controls={false}
+            controlsList="nodownload noplaybackrate nofullscreen"
+            disablePictureInPicture
+            aria-hidden="true"
+            tabIndex={-1}
+            className="h-full w-full object-contain"
+            style={{ pointerEvents: "none", userSelect: "none" }}
+            onError={() => setLoadError(true)}
+          >
+            <source src={asset.src} type="video/mp4" />
+          </video>
+        </div>
       );
     }
 
     return (
       <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-gradient-to-br from-muted/50 to-muted text-muted-foreground text-sm font-medium">
-        No se pudo cargar el GIF
+        No se pudo cargar el video
       </div>
     );
   };
