@@ -11,6 +11,7 @@ import type { ResultadoEvaluacionDTO } from "@/types/api.types";
 export interface QuizQuestion {
   id: string;
   text: string;
+  imageUrl?: string;
   options: string[];
   alternativaIds: number[];
 }
@@ -92,7 +93,23 @@ const ActiveQuizView = ({ state, actions, lessonTitle }: { state: any, actions: 
             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <h3 className="text-lg font-semibold text-foreground">{state.currentQuestion.text}</h3>
+            <div className="flex flex-col gap-4">
+              <h3 className="text-lg font-semibold text-foreground">{state.currentQuestion.text}</h3>
+              {/* Imagen de la pregunta o placeholder de prueba si no viene */}
+              <div className="w-full flex justify-center bg-secondary/20 rounded-xl p-4 border border-border">
+                <img 
+                  src={state.currentQuestion.imageUrl || "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp"} 
+                  alt="Pregunta" 
+                  className="max-h-64 object-contain rounded-lg"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp") {
+                       e.currentTarget.src = "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp";
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            
             <div className="space-y-3">
               {state.currentQuestion.options.map((option: string, index: number) => (
                 <motion.button
@@ -185,13 +202,20 @@ const QuizResultsView = ({ state, onClose }: { state: any, onClose: () => void }
                         <p className="text-sm text-destructive">✗ Tu respuesta: {selectedText}</p>
                         <p className="text-sm text-success">✓ Respuesta correcta: {getCorrectAnswerText(item)}</p>
                         
-                        {(item.feedback?.solucionTexto || item.feedback?.solucionImagenUrl) && (
-                          <div className="mt-3 p-3 bg-card rounded-lg border border-border">
-                            <p className="text-xs font-medium text-muted-foreground mb-2">Solución:</p>
-                            {item.feedback.solucionTexto && <p className="text-sm text-foreground">{item.feedback.solucionTexto}</p>}
-                            {item.feedback.solucionImagenUrl && <img src={item.feedback.solucionImagenUrl} alt="Solución" className="mt-2 rounded-lg max-h-48 object-contain" />}
-                          </div>
-                        )}
+                        <div className="mt-3 p-3 bg-card rounded-lg border border-border">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">Solución:</p>
+                          {item.feedback?.solucionTexto && <p className="text-sm text-foreground">{item.feedback.solucionTexto}</p>}
+                          <img 
+                            src={item.feedback?.solucionImagenUrl || "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp"} 
+                            alt="Solución" 
+                            className="mt-2 rounded-lg max-h-48 object-contain"
+                            onError={(e) => {
+                               if(e.currentTarget.src !== "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp"){
+                                   e.currentTarget.src = "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp";
+                               }
+                            }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>

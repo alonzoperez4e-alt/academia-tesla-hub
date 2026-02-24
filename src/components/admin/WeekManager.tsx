@@ -15,6 +15,7 @@ export interface Lesson {
 }
 
 export interface Week {
+  id: number;
   week: number;
   isUnlocked: boolean;
   lessons: Lesson[];
@@ -24,7 +25,7 @@ interface WeekManagerProps {
   courseName: string;
   weeks: Week[];
   onBack: () => void;
-  onAddLesson: (weekNumber: number) => void;
+  onAddLesson: (weekId: number, weekNumber: number) => void;
   onViewDetails: (weekNumber: number) => void;
   onUnlockWeek: (weekNumber: number) => void;
   onAddWeek: () => void;
@@ -133,7 +134,7 @@ export const WeekManager = ({
             <div className="space-y-2">
               {/* Add Lesson Button */}
               <Button
-                onClick={() => onAddLesson(week.week)}
+                onClick={() => onAddLesson(week.id, week.week)}
                 variant="outline"
                 size="sm"
                 className="w-full"

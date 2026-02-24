@@ -32,6 +32,7 @@ export interface CuestionarioDTO {
 export interface PreguntaDTO {
   idPregunta: number;
   textoPregunta: string;
+  preguntaImagenUrl?: string;
   alternativas: AlternativaDTO[];
 }
 
@@ -84,9 +85,7 @@ export interface CrearCursoDTO {
 }
 
 export interface CrearSemanaDTO {
-  idCurso: number;
   nroSemana: number;
-  isBloqueada: boolean;
 }
 
 export interface CrearLeccionDTO {
@@ -104,6 +103,7 @@ export interface CrearAlternativaDTO {
 export interface CrearPreguntaDTO {
   idLeccion: number;
   textoPregunta: string;
+  preguntaImagenUrl?: string;
   solucionTexto: string;
   solucionImagenUrl: string;
   alternativas: CrearAlternativaDTO[];
@@ -141,6 +141,7 @@ export interface Pregunta {
   /** Swagger lo muestra como "string" (posible referencia/DTO simplificado). */
   leccion: string;
   textoPregunta: string;
+  preguntaImagenUrl?: string;
   solucionTexto: string;
   solucionImagenUrl: string;
   alternativas: Alternativa[];
@@ -213,4 +214,17 @@ export interface RankingItemDTO {
   posicionActual: number;   
   tendencia: number;        
   esUsuarioActual: boolean; 
+}
+
+export interface ViewLeccionDTO {
+  idLeccion: number;
+  nombre: string;
+  orden: number;
+}
+
+export interface ViewSemanaDTO {
+  idSemana: number;
+  nroSemana: number;
+  isBloqueada: boolean;
+  lecciones: ViewLeccionDTO[];
 }

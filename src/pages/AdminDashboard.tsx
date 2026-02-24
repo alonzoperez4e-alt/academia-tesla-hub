@@ -6,6 +6,7 @@ import { CourseSelector } from "@/components/admin/CourseSelector";
 import { WeekManager, Week, Lesson } from "@/components/admin/WeekManager";
 import { LessonFormModal } from "@/components/admin/LessonFormModal";
 import { WeekDetailsModal } from "@/components/admin/WeekDetailsModal";
+import { WeekFormModal } from "@/components/admin/WeekFormModal";
 import { Construction } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { estudianteService } from "@/services/estudianteService";
@@ -45,8 +46,10 @@ const AdminDashboard = () => {
   // Modal states
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
   const [selectedWeekForLesson, setSelectedWeekForLesson] = useState<number | null>(null);
+  const [selectedWeekIdForLesson, setSelectedWeekIdForLesson] = useState<number | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedWeekForDetails, setSelectedWeekForDetails] = useState<number | null>(null);
+  const [isAddWeekModalOpen, setIsAddWeekModalOpen] = useState(false);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -81,11 +84,27 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleSelectCourse = (courseId: number) => {
+  const handleSelectCourse = async (courseId: number) => {
     setSelectedCourse(courseId);
-    // Initialize mock weeks data for the course if not exist
-    if (!weeksData[courseId]) {
-      setWeeksData(prev => ({ ...prev, [courseId]: [] }));
+    try {
+      const semanas = await adminService.listarSemanas(courseId);
+      const mappedWeeks: Week[] = semanas.map(s => ({
+        id: s.idSemana,
+        week: s.nroSemana,
+        isUnlocked: !s.isBloqueada,
+        lessons: s.lecciones.map(l => ({
+          id: String(l.idLeccion),
+          name: l.nombre,
+          description: "", // fallback
+          questionsCount: 0 // fallback
+        }))
+      })).sort((a, b) => a.week - b.week);
+      setWeeksData(prev => ({ ...prev, [courseId]: mappedWeeks }));
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudieron cargar las semanas.", variant: "destructive" });
+      if (!weeksData[courseId]) {
+        setWeeksData(prev => ({ ...prev, [courseId]: [] }));
+      }
     }
   };
 
@@ -93,7 +112,8 @@ const AdminDashboard = () => {
     setSelectedCourse(null);
   };
 
-  const handleAddLesson = (weekNumber: number) => {
+  const handleAddLesson = (weekId: number, weekNumber: number) => {
+    setSelectedWeekIdForLesson(weekId);
     setSelectedWeekForLesson(weekNumber);
     setIsLessonModalOpen(true);
   };
@@ -120,23 +140,41 @@ const AdminDashboard = () => {
   };
 
   const handleAddWeek = () => {
+    setIsAddWeekModalOpen(true);
+  };
+
+  const handleSaveWeek = async (weekNumber: number) => {
     if (selectedCourse === null) return;
     
-    const currentWeeks = weeksData[selectedCourse] || [];
-    const newWeekNumber = currentWeeks.length + 1;
-    
-    setWeeksData(prev => ({
-      ...prev,
-      [selectedCourse]: [
-        ...(prev[selectedCourse] || []),
-        { week: newWeekNumber, isUnlocked: false, lessons: [] },
-      ],
-    }));
-    
-    toast({
-      title: "Semana agregada",
-      description: `Semana ${newWeekNumber} creada exitosamente.`,
-    });
+    try {
+      const newWeek = await adminService.crearSemana(selectedCourse, { nroSemana: weekNumber });
+      
+      const newMappedWeek: Week = {
+        id: newWeek.idSemana,
+        week: newWeek.nroSemana,
+        isUnlocked: !newWeek.isBloqueada,
+        lessons: []
+      };
+
+      setWeeksData(prev => {
+        const currentWeeks = prev[selectedCourse] || [];
+        const updatedWeeks = [...currentWeeks, newMappedWeek].sort((a, b) => a.week - b.week);
+        return { ...prev, [selectedCourse]: updatedWeeks };
+      });
+      
+      toast({
+        title: "Semana agregada",
+        description: `Semana ${newWeek.nroSemana} creada exitosamente.`,
+      });
+    } catch (error: any) {
+      console.error("Error creating week:", error);
+      toast({
+        title: "Error al crear",
+        description: "Hubo un problema al crear la semana. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
   const handleDeleteWeek = (weekNumber: number) => {
@@ -292,13 +330,15 @@ const AdminDashboard = () => {
       </div>
 
       {/* Lesson Form Modal */}
-      {selectedWeekForLesson !== null && (
+      {selectedWeekForLesson !== null && selectedWeekIdForLesson !== null && (
         <LessonFormModal
           isOpen={isLessonModalOpen}
           onClose={() => {
             setIsLessonModalOpen(false);
             setSelectedWeekForLesson(null);
+            setSelectedWeekIdForLesson(null);
           }}
+          weekId={selectedWeekIdForLesson}
           weekNumber={selectedWeekForLesson}
           onSave={handleSaveLesson}
         />
@@ -315,6 +355,16 @@ const AdminDashboard = () => {
           weekNumber={selectedWeekForDetails}
           lessons={getWeekLessons()}
           onDeleteLesson={handleDeleteLesson}
+        />
+      )}
+
+      {/* Week Form Modal */}
+      {selectedCourse !== null && (
+        <WeekFormModal
+          isOpen={isAddWeekModalOpen}
+          onClose={() => setIsAddWeekModalOpen(false)}
+          onSave={handleSaveWeek}
+          existingWeeks={weeksData[selectedCourse]?.map(w => w.week) || []}
         />
       )}
     </div>
