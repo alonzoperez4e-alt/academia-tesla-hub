@@ -237,7 +237,7 @@ const StudentProgressProfile = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.5 }}
           >
-            <Card className="bg-[#F3F4F6] border-2 border-yellow-400/50 shadow-lg">
+            <Card className="bg-[#F3F4F6] border-primary/20 shadow-lg">
               <CardContent className="p-6 sm:p-8">
                 {/* Contenedor vertical centrado - SIN animaciones flotantes */}
                 <motion.div
