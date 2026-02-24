@@ -64,7 +64,7 @@ const AdminDashboard = () => {
       const data = await estudianteService.obtenerCursos();
       setCourses(data);
     } catch (error) {
-      toast({ title: "Error", description: "No se pudieron cargar los cursos.", variant: "destructive" });
+      toast({ title: "Error", description: "No se  pudieron cargar los cursos.", variant: "destructive" });
     } finally {
       setIsLoadingCourses(false);
     }
