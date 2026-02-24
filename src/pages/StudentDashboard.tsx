@@ -144,7 +144,12 @@ const StudentDashboard = () => {
         userCode={user.code}
         currentStreak={currentStreak}
         gems={totalExp}
-        selectedCourse={selectedCurso?.nombre ?? ""}
+        selectedCourse={String(selectedCurso?.idCurso ?? "")}
+        availableCourses={state.cursos.map(c => ({
+          id: String(c.idCurso),
+          name: c.nombre,
+          isEnabled: c.isHabilitado
+        }))}
         onCourseChange={handleCourseChange}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}

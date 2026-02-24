@@ -21,14 +21,15 @@ interface GamifiedStatusBarProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
   onLogout?: () => void;
+  availableCourses?: { id: string; name: string; isEnabled: boolean }[];
 }
 
-const courses: Course[] = [
+const defaultCourses: Course[] = [
   { id: "comunicacion", name: "Comunicación", icon: "comunicacion", color: "from-purple-500 to-purple-600", isEnabled: true },
-  { id: "matematica", name: "Matemáticas", icon: "matematica", color: "from-blue-500 to-blue-600", isEnabled: false },
-  { id: "fisica", name: "Física", icon: "fisica", color: "from-cyan-500 to-cyan-600", isEnabled: false },
-  { id: "quimica", name: "Química", icon: "quimica", color: "from-green-500 to-green-600", isEnabled: false },
-  { id: "razonamiento", name: "Razonamiento", icon: "razonamiento", color: "from-orange-500 to-orange-600", isEnabled: false },
+  { id: "matematica", name: "Matemáticas", icon: "matematica", color: "from-blue-500 to-blue-600", isEnabled: true },
+  { id: "fisica", name: "Física", icon: "fisica", color: "from-cyan-500 to-cyan-600", isEnabled: true },
+  { id: "quimica", name: "Química", icon: "quimica", color: "from-green-500 to-green-600", isEnabled: true },
+  { id: "razonamiento", name: "Razonamiento", icon: "razonamiento", color: "from-orange-500 to-orange-600", isEnabled: true },
 ];
 
 const iconMap = {
@@ -37,6 +38,15 @@ const iconMap = {
   fisica: Atom,
   quimica: FlaskConical,
   razonamiento: Brain,
+};
+
+const getCourseStyle = (name: string): { icon: Course["icon"], color: string } => {
+  const normalized = name.toLowerCase();
+  if (normalized.includes('comunica')) return { icon: "comunicacion", color: "from-purple-500 to-purple-600" };
+  if (normalized.includes('matem')) return { icon: "matematica", color: "from-blue-500 to-blue-600" };
+  if (normalized.includes('físi') || normalized.includes('fisi')) return { icon: "fisica", color: "from-cyan-500 to-cyan-600" };
+  if (normalized.includes('quími') || normalized.includes('quimi')) return { icon: "quimica", color: "from-green-500 to-green-600" };
+  return { icon: "razonamiento", color: "from-orange-500 to-orange-600" };
 };
 
 export const GamifiedStatusBar = ({
@@ -49,11 +59,22 @@ export const GamifiedStatusBar = ({
   searchValue,
   onSearchChange,
   onLogout,
+  availableCourses = [],
 }: GamifiedStatusBarProps) => {
   const [showCourseMenu, setShowCourseMenu] = useState(false);
   
+  const courses: Course[] = availableCourses.length > 0 
+    ? availableCourses.map(c => ({
+        id: c.id,
+        name: c.name,
+        icon: getCourseStyle(c.name).icon,
+        color: getCourseStyle(c.name).color,
+        isEnabled: c.isEnabled
+      }))
+    : defaultCourses;
+
   const currentCourse = courses.find(c => c.id === selectedCourse) || courses[0];
-  const CourseIcon = iconMap[currentCourse.icon];
+  const CourseIcon = currentCourse ? iconMap[currentCourse.icon] : iconMap["razonamiento"];
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">

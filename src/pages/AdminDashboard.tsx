@@ -6,156 +6,26 @@ import { CourseSelector } from "@/components/admin/CourseSelector";
 import { WeekManager, Week, Lesson } from "@/components/admin/WeekManager";
 import { LessonFormModal } from "@/components/admin/LessonFormModal";
 import { WeekDetailsModal } from "@/components/admin/WeekDetailsModal";
-import { FileText, Users, BookOpen, Construction, MessageSquare, ClipboardList } from "lucide-react";
+import { Construction } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { estudianteService } from "@/services/estudianteService";
+import { adminService } from "@/services/adminService";
+import type { Curso } from "@/types/api.types";
 
-// Mock courses data
-const mockCourses = [
-  { 
-    id: "comunicacion", 
-    name: "Comunicación", 
-    description: "Curso de comprensión lectora, redacción y análisis textual.",
-    icon: "comunicacion" as const, 
-    color: "from-purple-500 to-purple-600", 
-    isEnabled: true,
-    lessonsCount: 8,
-    questionsCount: 45,
-  },
-  { 
-    id: "matematica", 
-    name: "Matemáticas", 
-    description: "Álgebra, aritmética, geometría y trigonometría.",
-    icon: "matematica" as const, 
-    color: "from-blue-500 to-blue-600", 
-    isEnabled: false,
-    lessonsCount: 0,
-    questionsCount: 0,
-  },
-  { 
-    id: "fisica", 
-    name: "Física", 
-    description: "Mecánica, termodinámica, ondas y electromagnetismo.",
-    icon: "fisica" as const, 
-    color: "from-cyan-500 to-cyan-600", 
-    isEnabled: false,
-    lessonsCount: 0,
-    questionsCount: 0,
-  },
-  { 
-    id: "quimica", 
-    name: "Química", 
-    description: "Química general, orgánica e inorgánica.",
-    icon: "quimica" as const, 
-    color: "from-green-500 to-green-600", 
-    isEnabled: false,
-    lessonsCount: 0,
-    questionsCount: 0,
-  },
-  { 
-    id: "razonamiento", 
-    name: "Razonamiento", 
-    description: "Razonamiento verbal y matemático.",
-    icon: "razonamiento" as const, 
-    color: "from-orange-500 to-orange-600", 
-    isEnabled: false,
-    lessonsCount: 0,
-    questionsCount: 0,
-  },
-];
-
-// Initial mock weeks data
-const initialWeeksData: Record<string, Week[]> = {
-  comunicacion: [
-    { 
-      week: 1, 
-      isUnlocked: true, 
-      lessons: [
-        { 
-          id: "l1-1", 
-          name: "SINTAXIS", 
-          description: " ", 
-          questionsCount: 5 
-        },
-        { 
-          id: "l1-2", 
-          name: "SUSTANTIVO", 
-          description: " ", 
-          questionsCount: 5 
-        },
-      ] 
-    },
-    { 
-      week: 2, 
-      isUnlocked: true, 
-      lessons: [
-        { 
-          id: "l2-1", 
-          name: " VERBO ", 
-          description: " ", 
-          questionsCount: 4 
-        },
-        { 
-          id: "l2-2", 
-          name: "Práctica de Redacción", 
-          description: "Mejora tu escritura", 
-          questionsCount: 3 
-        },
-      ] 
-    },
-    { week: 3, isUnlocked: false, lessons: [] },
-    { week: 4, isUnlocked: false, lessons: [] },
-    { week: 5, isUnlocked: false, lessons: [] },
-    { week: 6, isUnlocked: false, lessons: [] },
-    { week: 7, isUnlocked: false, lessons: [] },
-    { week: 8, isUnlocked: false, lessons: [] },
-  ],
+// Initial mock weeks data (retained just for rendering WeekManager for now if needed, though ideal would be fetching from backend too)
+const initialWeeksData: Record<number, Week[]> = {
+  // Mapping by idCurso instead of string for mock data, normally it'd be fetched.
 };
 
-// Mock lesson details with full questions
-const mockLessonDetails: Record<string, {
-  id: string;
-  name: string;
-  description: string;
-  questions: Array<{
-    id: string;
-    text: string;
-    options: string[];
-    correctAnswer: number;
-    solutionText?: string;
-    solutionImage?: string;
-  }>;
-}> = {
-  "l1-1": {
-    id: "l1-1",
-    name: "SINTAXIS",
-    description: " ",
-    questions: [
-      { id: "q1", text: "¿Cuál es el sinónimo de 'efímero'?", options: ["Eterno", "Pasajero", "Sólido", "Firme"], correctAnswer: 1, solutionText: "Efímero significa pasajero, transitorio." },
-      { id: "q2", text: "El texto instructivo se caracteriza por:", options: ["Narrar hechos", "Dar órdenes o pasos", "Describir lugares", "Argumentar ideas"], correctAnswer: 1 },
-    ],
-  },
-  "l1-2": {
-    id: "l1-2",
-    name: "SUSTANTIVO",
-    description: " ",
-    questions: [
-      { id: "q3", text: "La personificación consiste en:", options: ["Comparar dos cosas", "Dar cualidades humanas a objetos", "Exagerar algo", "Repetir palabras"], correctAnswer: 1 },
-    ],
-  },
-};
-
-const stats = [
-  { label: "Total Lecciones", value: "24", icon: BookOpen, color: "bg-primary" },
-  { label: "Preguntas Activas", value: "89", icon: ClipboardList, color: "bg-purple-500" },
-  { label: "Alumnos Activos", value: "324", icon: Users, color: "bg-success" },
-  { label: "Cursos Activos", value: "1", icon: MessageSquare, color: "bg-accent" },
-];
+// Mock lesson details
+const mockLessonDetails: Record<string, any> = {};
 
 interface User {
   code: string;
   name: string;
   role: string;
   area?: string;
+  id?: number;
 }
 
 const AdminDashboard = () => {
@@ -164,8 +34,12 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<User | null>(null);
   
+  // Courses state from backend
+  const [courses, setCourses] = useState<Curso[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+
   // Course and week management state
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
   const [weeksData, setWeeksData] = useState(initialWeeksData);
   
   // Modal states
@@ -181,10 +55,38 @@ const AdminDashboard = () => {
       return;
     }
     setUser(JSON.parse(userData));
+    fetchCourses();
   }, [navigate]);
 
-  const handleSelectCourse = (courseId: string) => {
+  const fetchCourses = async () => {
+    setIsLoadingCourses(true);
+    try {
+      const data = await estudianteService.obtenerCursos();
+      setCourses(data);
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudieron cargar los cursos.", variant: "destructive" });
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
+
+  const handleCreateCourse = async (nombre: string, descripcion: string) => {
+    try {
+      await adminService.crearCurso({ nombre, descripcion, isHabilitado: true });
+      toast({ title: "Exito", description: "Curso creado exitosamente." });
+      await fetchCourses(); // Refresh courses list
+    } catch (error: any) {
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const handleSelectCourse = (courseId: number) => {
     setSelectedCourse(courseId);
+    // Initialize mock weeks data for the course if not exist
+    if (!weeksData[courseId]) {
+      setWeeksData(prev => ({ ...prev, [courseId]: [] }));
+    }
   };
 
   const handleBackToCourses = () => {
@@ -202,7 +104,7 @@ const AdminDashboard = () => {
   };
 
   const handleUnlockWeek = (weekNumber: number) => {
-    if (!selectedCourse) return;
+    if (selectedCourse === null) return;
     
     setWeeksData(prev => ({
       ...prev,
@@ -213,12 +115,12 @@ const AdminDashboard = () => {
     
     toast({
       title: "Semana desbloqueada",
-      description: `La Semana ${weekNumber} ha sido desbloqueada para todos los alumnos.`,
+      description: `La Semana ${weekNumber} ha sido desbloqueada.`,
     });
   };
 
   const handleAddWeek = () => {
-    if (!selectedCourse) return;
+    if (selectedCourse === null) return;
     
     const currentWeeks = weeksData[selectedCourse] || [];
     const newWeekNumber = currentWeeks.length + 1;
@@ -226,7 +128,7 @@ const AdminDashboard = () => {
     setWeeksData(prev => ({
       ...prev,
       [selectedCourse]: [
-        ...prev[selectedCourse],
+        ...(prev[selectedCourse] || []),
         { week: newWeekNumber, isUnlocked: false, lessons: [] },
       ],
     }));
@@ -238,7 +140,7 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteWeek = (weekNumber: number) => {
-    if (!selectedCourse) return;
+    if (selectedCourse === null) return;
     
     setWeeksData(prev => ({
       ...prev,
@@ -258,11 +160,9 @@ const AdminDashboard = () => {
       text: string;
       options: string[];
       correctAnswer: number;
-      solutionText?: string;
-      solutionImage?: string;
     }>;
   }) => {
-    if (!selectedCourse || selectedWeekForLesson === null) return;
+    if (selectedCourse === null || selectedWeekForLesson === null) return;
     
     const newLessonId = `l${selectedWeekForLesson}-${Date.now()}`;
     const newLesson: Lesson = {
@@ -288,7 +188,7 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteLesson = (lessonId: string) => {
-    if (!selectedCourse || selectedWeekForDetails === null) return;
+    if (selectedCourse === null || selectedWeekForDetails === null) return;
     
     setWeeksData(prev => ({
       ...prev,
@@ -309,7 +209,7 @@ const AdminDashboard = () => {
 
   // Get lessons for details modal
   const getWeekLessons = () => {
-    if (!selectedCourse || selectedWeekForDetails === null) return [];
+    if (selectedCourse === null || selectedWeekForDetails === null) return [];
     const week = weeksData[selectedCourse]?.find(w => w.week === selectedWeekForDetails);
     if (!week) return [];
     
@@ -333,43 +233,24 @@ const AdminDashboard = () => {
     </div>
   );
 
-  // Render questionnaire management (unified view)
+  // Render questionnaire management
   const renderQuestionnaireManagement = () => (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={stat.label}
-              className="card-tesla p-4 lg:p-6 animate-slide-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs lg:text-sm text-muted-foreground mb-1">{stat.label}</p>
-                  <p className="text-xl lg:text-3xl font-bold text-foreground">{stat.value}</p>
-                </div>
-                <div className={`w-10 h-10 lg:w-12 lg:h-12 ${stat.color} rounded-xl flex items-center justify-center`}>
-                  <Icon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
       {/* Main Content */}
-      <div className="card-tesla p-4 lg:p-6">
-        {!selectedCourse ? (
-          <CourseSelector
-            courses={mockCourses}
-            onSelectCourse={handleSelectCourse}
-          />
+      <div className="card-tesla p-4 lg:p-6 min-h-[60vh]">
+        {selectedCourse === null ? (
+          isLoadingCourses ? (
+            <div className="flex items-center justify-center h-full">Cargando cursos...</div>
+          ) : (
+            <CourseSelector
+              courses={courses}
+              onSelectCourse={handleSelectCourse}
+              onCreateCourse={handleCreateCourse}
+            />
+          )
         ) : (
           <WeekManager
-            courseName={mockCourses.find(c => c.id === selectedCourse)?.name || ""}
+            courseName={courses.find(c => c.idCurso === selectedCourse)?.nombre || "Curso"}
             weeks={weeksData[selectedCourse] || []}
             onBack={handleBackToCourses}
             onAddLesson={handleAddLesson}
