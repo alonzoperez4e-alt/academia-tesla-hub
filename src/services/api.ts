@@ -35,8 +35,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as any;
 
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry && originalRequest.url !== '/auth/refresh') {
-    originalRequest._retry = true;
+    if (
+      (error.response?.status !== 401 && error.response?.status !== 403) ||
+      originalRequest?._retry ||
+      originalRequest?.url?.includes('/auth/refresh')
+    ) {
       return Promise.reject(error);
     }
 
