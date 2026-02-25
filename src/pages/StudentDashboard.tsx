@@ -82,7 +82,7 @@ const StudentDashboard = () => {
       case "path":
         return (
           <div className="pb-24 lg:pb-8 px-4 max-w-7xl mx-auto">
-            <div className="flex flex-col items-center gap-4 py-6 w-full">
+            <div className="flex flex-col items-center gap-4 py-4 w-full">
               <div className="text-center">
                 <StudentDinoGif exp={totalExp} progressPercent={dinosaurProgress} size="md" showProgressText={false} />
                 <div className="mt-2 text-sm font-medium text-muted-foreground">
@@ -115,7 +115,7 @@ const StudentDashboard = () => {
 
       case "profile":
         return (
-          <div className="pb-24 lg:pb-8 px-4">
+          <div className="pb-24 lg:pb-8 px-4 mt-4">
             <StudentProgressProfile
               userName={user.name.split(" ")[0]}
               overallProgress={state.progressMetrics.overallProgress}
@@ -170,7 +170,7 @@ const StudentDashboard = () => {
         ))}
       </div>
 
-      <main className="min-h-[calc(100vh-8rem)] lg:pt-[156px]">
+      <main className="min-h-[calc(100vh-8rem)] pt-1 lg:pt-[88px]">
         {renderContent()}
       </main>
 
