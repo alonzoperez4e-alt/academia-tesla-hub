@@ -1,13 +1,14 @@
-type Session = {
+export interface Session {
   accessToken: string | null;
   role: string | null;
-  idUsuario: number | null;
+  idUsuario: number | string | null;
   nombre: string | null;
   apellido: string | null;
   codigo: string | null;
-};
+}
 
-let session: Session = {
+const storedSession = localStorage.getItem('tesla_auth_session');
+let session: Session = storedSession ? JSON.parse(storedSession) : {
   accessToken: null,
   role: null,
   idUsuario: null,
@@ -17,45 +18,20 @@ let session: Session = {
 };
 
 export const authSession = {
-  set(
-    accessToken: string,
-    role: string | null,
-    profile?: {
-      idUsuario?: number | null;
-      nombre?: string | null;
-      apellido?: string | null;
-      codigo?: string | null;
-    }
-  ) {
-    session.accessToken = accessToken;
-    session.role = role;
-    session.idUsuario = profile?.idUsuario ?? null;
-    session.nombre = profile?.nombre ?? null;
-    session.apellido = profile?.apellido ?? null;
-    session.codigo = profile?.codigo ?? null;
+  getAccessToken: () => session.accessToken,
+  getRole: () => session.role,
+  getProfile: () => ({
+    idUsuario: session.idUsuario,
+    nombre: session.nombre,
+    apellido: session.apellido,
+    codigo: session.codigo,
+  }),
+  set: (accessToken: string, role: string | null, userData?: Partial<Session>) => {
+    session = { ...session, accessToken, role, ...userData };
+    localStorage.setItem('tesla_auth_session', JSON.stringify(session));
   },
-  getAccessToken() {
-    return session.accessToken;
-  },
-  getRole() {
-    return session.role;
-  },
-  getProfile() {
-    return {
-      idUsuario: session.idUsuario,
-      nombre: session.nombre,
-      apellido: session.apellido,
-      codigo: session.codigo,
-    };
-  },
-  clear() {
-    session = {
-      accessToken: null,
-      role: null,
-      idUsuario: null,
-      nombre: null,
-      apellido: null,
-      codigo: null,
-    };
-  },
+  clear: () => {
+    session = { accessToken: null, role: null, idUsuario: null, nombre: null, apellido: null, codigo: null };
+    localStorage.removeItem('tesla_auth_session');
+  }
 };
