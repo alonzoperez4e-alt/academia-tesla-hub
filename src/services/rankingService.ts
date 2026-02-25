@@ -6,8 +6,17 @@ export interface RankingSemanalEntry {
   posicion: number;
   inicial: string;
   nombreCompleto: string;
-  expSemanal: number;
-  esUsuarioActual: boolean;
+  expParaRanking: number;
+  expSemanal?: number;
+  esUsuarioActual?: boolean;
+}
+
+export interface RankingHistorialEntry {
+  idHistorial: number;
+  fechaFinSemana: string;
+  posicion: number;
+  nombreCompleto: string;
+  expObtenida: number;
 }
 
 export const rankingService = {
@@ -19,16 +28,24 @@ export const rankingService = {
   },
 
   async obtenerRankingSemanal(): Promise<RankingSemanalEntry[]> {
-    const response = await api.get<RankingItemDTO[]>('/ranking');
+    const response = await api.get<any[]>('/ranking/semanal');
     const data = response.data ?? [];
 
     return data.map((item, index) => ({
       idUsuario: item.idUsuario,
-      posicion: item.posicionActual ?? index + 1,
+      posicion: item.posicionActual ?? item.posicion ?? index + 1,
       inicial: item.inicial || (item.nombreCompleto?.[0]?.toUpperCase() ?? "?"),
       nombreCompleto: item.nombreCompleto,
+      expParaRanking: item.expParaRanking ?? item.expTotal ?? 0,
       expSemanal: item.expTotal,
       esUsuarioActual: item.esUsuarioActual ?? false,
     }));
+  },
+
+  async obtenerHistorial(mes: number, anio: number): Promise<RankingHistorialEntry[]> {
+    const response = await api.get<RankingHistorialEntry[]>(`/ranking/historial`, {
+      params: { mes, anio },
+    });
+    return response.data ?? [];
   },
 };

@@ -1,12 +1,16 @@
 import { Crown, Medal, Trophy, TrendingUp, TrendingDown, Minus, Gem, Sparkles, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import RankingSemanal from "@/components/RankingSemanal";
+import Temporizador from "@/components/Temporizador";
+import type { RankingItemDTO } from "@/types/api.types";
 
 interface RankingEntry {
   position: number;
   name: string;
   avatar?: string;
   exp: number;
+  expForRanking?: number;
   isCurrentUser?: boolean;
   trend: "up" | "down" | "same";
   previousPosition?: number;
@@ -17,14 +21,53 @@ interface RankingTabProps {
   userPosition: number;
   userPreviousPosition: number;
   totalStudents: number;
+  rawRankingData: RankingItemDTO[];
+  currentUser?: RankingItemDTO | null;
+  userId?: number | null;
 }
 
 export const RankingTab = ({ 
   rankings, 
   userPosition, 
   userPreviousPosition,
-  totalStudents 
+  totalStudents,
+  rawRankingData,
+  currentUser,
+  userId
 }: RankingTabProps) => {
+  const usuarioActual = (rawRankingData ?? []).find((alumno) => alumno.esUsuarioActual)
+    ?? (rawRankingData ?? []).find((alumno) => userId && alumno.idUsuario === userId)
+    ?? currentUser
+    ?? null;
+
+  const fallbackRanking = rankings.find((r) => r.isCurrentUser || (userId && rawRankingData?.find(a => a.idUsuario === userId && a.posicionActual === r.position)));
+
+  const derivePositionFromExp = () => {
+    if (!userId || !(rawRankingData?.length)) return 0;
+    const ordered = [...rawRankingData]
+      .map(item => ({ id: item.idUsuario, exp: item.expParaRanking ?? item.expTotal ?? 0 }))
+      .sort((a, b) => b.exp - a.exp);
+    const idx = ordered.findIndex((item) => item.id === userId);
+    return idx >= 0 ? idx + 1 : 0;
+  };
+
+  let currentPos = usuarioActual?.posicionActual
+    ?? fallbackRanking?.position
+    ?? userPosition
+    ?? 0;
+
+  if (!(Number.isFinite(currentPos) && currentPos > 0)) {
+    const derived = derivePositionFromExp();
+    if (derived > 0) currentPos = derived;
+  }
+
+  const previousPos = usuarioActual?.rankingAnterior
+    ?? fallbackRanking?.previousPosition
+    ?? userPreviousPosition
+    ?? 0;
+
+  const currentDisplay = Number.isFinite(currentPos) && currentPos > 0 ? currentPos : "-";
+  const previousDisplay = Number.isFinite(previousPos) && previousPos > 0 ? previousPos : "-";
   const top3 = rankings.slice(0, 3);
   const rest = rankings.slice(3);
 
@@ -45,10 +88,12 @@ export const RankingTab = ({
     }
   };
 
-  const positionChange = userPreviousPosition - userPosition;
-
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="max-w-3xl mx-auto px-4 py-4">
+      <div className="mb-4 flex justify-center">
+        <Temporizador />
+      </div>
+
       {/* Header mejorado y compacto */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
@@ -56,66 +101,34 @@ export const RankingTab = ({
         transition={{ duration: 0.5 }}
         className="text-center mb-6"
       >
-        <div className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-yellow-400/20 via-orange-400/20 to-yellow-400/20 rounded-full mb-4 border-2 border-yellow-400/30 shadow-lg">
-          <Trophy className="w-5 h-5 text-yellow-600" />
-          <span className="font-bold text-base text-yellow-700">🏆 Ranking por EXP Total</span>
-          <Sparkles className="w-4 h-4 text-yellow-600" />
-        </div>
-        
-        {/* User's Position Summary - más compacto */}
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-4 sm:p-5 border-2 border-primary/30 shadow-lg"
-        >
-          <p className="text-muted-foreground mb-2 text-sm font-medium">🎯 Tu lugar en el ranking</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5">
-            <motion.span 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.4, type: "spring", bounce: 0.5 }}
-              className="text-5xl sm:text-6xl font-black text-primary drop-shadow-lg"
-            >
-              #{userPosition}
-            </motion.span>
-            <div className="text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start gap-2">
-                {positionChange > 0 ? (
-                  <>
-                    <div className="bg-green-100 rounded-full p-1.5">
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div>
-                      <span className="text-green-600 font-bold text-base">¡Subiste {positionChange} {positionChange === 1 ? 'lugar' : 'lugares'}! 🚀</span>
-                      <p className="text-xs text-muted-foreground">La semana pasada: #{userPreviousPosition}</p>
-                    </div>
-                  </>
-                ) : positionChange < 0 ? (
-                  <>
-                    <div className="bg-orange-100 rounded-full p-1.5">
-                      <TrendingDown className="w-4 h-4 text-orange-600" />
-                    </div>
-                    <div>
-                      <span className="text-orange-600 font-bold text-base">Bajaste {Math.abs(positionChange)} {Math.abs(positionChange) === 1 ? 'lugar' : 'lugares'}</span>
-                      <p className="text-xs text-muted-foreground">La semana pasada: #{userPreviousPosition}</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="bg-blue-100 rounded-full p-1.5">
-                      <Minus className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <span className="text-blue-600 font-bold text-base">¡Mantuviste tu posición! 💪</span>
-                      <p className="text-xs text-muted-foreground">La semana pasada: #{userPreviousPosition}</p>
-                    </div>
-                  </>
-                )}
+        {/* WIDGET: TU LUGAR EN EL RANKING */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
+          {/* Título Superior */}
+          <div className="flex items-center gap-2 text-slate-500 font-medium mb-4">
+            <span>🎯</span>
+            <span>Tu lugar en el ranking</span>
+          </div>
+
+          <div className="flex items-center gap-6">
+            {/* 1. TOP ACTUAL (EL NÚMERO GIGANTE basado en exp_semanal) */}
+            <div className="flex flex-col items-center">
+              <h2 className="text-6xl font-black text-blue-950 drop-shadow-sm">
+                #{currentDisplay}
+              </h2>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="flex flex-col">
+                <span className="font-bold text-blue-600 text-lg">
+                  ¡Sigue así! 💪
+                </span>
+                <span className="text-sm text-slate-500 font-medium mt-1">
+                  La semana pasada: <span className="text-slate-800 font-bold text-base">#{previousDisplay}</span>
+                </span>
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Top 3 Podium - Rediseñado completamente */}
@@ -343,6 +356,10 @@ export const RankingTab = ({
       <p className="text-center text-sm text-muted-foreground mt-4">
         {totalStudents} estudiantes en la academia
       </p>
+
+      <div className="mt-10">
+        <RankingSemanal />
+      </div>
     </div>
   );
 };

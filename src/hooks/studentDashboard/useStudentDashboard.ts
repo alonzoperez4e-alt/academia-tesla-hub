@@ -172,24 +172,34 @@ useEffect(() => {
   }, [weekSections]);
 
   const rankingDerivedInfo = useMemo(() => {
-    const mappedRankings = rankingData.map((item) => ({
-      position: item.posicionActual,
-      name: item.nombreCompleto,
-      exp: item.expTotal,
-      isCurrentUser: item.esUsuarioActual,
-      trend: mapTrend(item.tendencia),
-      previousPosition: item.posicionActual + item.tendencia,
-    }));
-    const currentUser = rankingData.find((item) => item.esUsuarioActual);
+    const mappedRankings = rankingData.map((item) => {
+      const isCurrent = item.esUsuarioActual || (user?.id && item.idUsuario === user.id);
+      const prev = item.rankingAnterior ?? (item.posicionActual + item.tendencia);
+      return {
+        position: item.posicionActual,
+        name: item.nombreCompleto,
+        exp: item.expTotal,
+        expForRanking: item.expParaRanking ?? item.expTotal,
+        isCurrentUser: isCurrent,
+        trend: mapTrend(item.tendencia),
+        previousPosition: prev,
+      };
+    });
+
+    const currentUser = rankingData.find((item) => item.esUsuarioActual || (user?.id && item.idUsuario === user.id));
     const userPos = currentUser?.posicionActual ?? 0;
+    const userPrev = currentUser ? (currentUser.rankingAnterior ?? currentUser.posicionActual + currentUser.tendencia) : userPos;
     
     return {
       rankings: mappedRankings,
       userPosition: userPos,
-      userPreviousPosition: currentUser ? userPos + currentUser.tendencia : userPos,
+      userPreviousPosition: userPrev,
       totalStudents: rankingData.length,
+      rawRankingData: rankingData,
+      currentUser,
+      userId: user?.id ?? null,
     };
-  }, [rankingData]);
+  }, [rankingData, user?.id]);
 
   return {
     state: {

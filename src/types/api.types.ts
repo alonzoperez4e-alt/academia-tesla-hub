@@ -211,9 +211,11 @@ export interface RankingItemDTO {
   nombreCompleto: string;   
   inicial: string;          
   expTotal: number;         
+  expParaRanking?: number;
   posicionActual: number;   
   tendencia: number;        
   esUsuarioActual: boolean; 
+  rankingAnterior: number;
 }
 
 export interface ViewLeccionDTO {
