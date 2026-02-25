@@ -228,3 +228,32 @@ export interface ViewSemanaDTO {
   isBloqueada: boolean;
   lecciones: ViewLeccionDTO[];
 }
+
+export interface SemanaDetalleDTO {
+  idSemana: number;
+  nroSemana: number;
+  isBloqueada: boolean;
+  lecciones: LeccionDetalleDTO[];
+}
+
+export interface LeccionDetalleDTO {
+  idLeccion: number;
+  nombre: string;
+  orden: number;
+  preguntas: PreguntaDetalleDTO[];
+}
+
+export interface PreguntaDetalleDTO {
+  idPregunta: number;
+  textoPregunta: string;
+  preguntaImagenUrl?: string;
+  textoSolucion: string;
+  solucionImagenUrl: string;
+  alternativas: AlternativaDetalleDTO[];
+}
+
+export interface AlternativaDetalleDTO {
+  idAlternativa: number;
+  texto: string;
+  isCorrecta: boolean;
+}

@@ -106,6 +106,14 @@ useEffect(() => {
     setIsLoadingQuiz(true);
     try {
       const cuestionario = await estudianteService.obtenerContenidoLeccion(idLeccion);
+
+      // Pre-cargar imágenes para que al momento de renderizar no tarden en mostrarse
+      cuestionario.preguntas?.forEach((p) => {
+        if (p.preguntaImagenUrl) {
+          const img = new Image();
+          img.src = p.preguntaImagenUrl;
+        }
+      });
       setCurrentQuiz({
         idLeccion,
         title: cuestionario.nombreLeccion,
@@ -134,6 +142,14 @@ useEffect(() => {
       }));
 
       const resultado = await estudianteService.finalizarLeccion(currentQuiz.idLeccion, user.id, respuestas);
+
+      // Pre-cargar imágenes de las soluciones para que la vista de feedback sea rápida
+      resultado.feedback?.forEach((f) => {
+        if (f.solucionImagenUrl) {
+          const img = new Image();
+          img.src = f.solucionImagenUrl;
+        }
+      });
 
       // Recargar datos para actualizar la UI
       const newStats = await statsService.getStudentStats(user.id);

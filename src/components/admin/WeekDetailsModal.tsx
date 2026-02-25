@@ -30,6 +30,7 @@ interface WeekDetailsModalProps {
   weekNumber: number;
   lessons: Lesson[];
   onDeleteLesson: (lessonId: string) => void;
+  onDeleteWeek?: () => void;
 }
 
 export const WeekDetailsModal = ({
@@ -38,6 +39,7 @@ export const WeekDetailsModal = ({
   weekNumber,
   lessons,
   onDeleteLesson,
+  onDeleteWeek,
 }: WeekDetailsModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -134,8 +136,14 @@ export const WeekDetailsModal = ({
           )}
         </div>
 
-        <div className="pt-4 border-t border-border">
-          <Button onClick={onClose} variant="outline" className="w-full">
+        <div className="pt-4 border-t border-border flex justify-between">
+          {onDeleteWeek && (
+            <Button onClick={onDeleteWeek} variant="destructive" className="flex items-center gap-2">
+              <Trash2 className="w-4 h-4" />
+              Eliminar Semana
+            </Button>
+          )}
+          <Button onClick={onClose} variant="outline" className={cn(onDeleteWeek ? "w-auto" : "w-full")}>
             Cerrar
           </Button>
         </div>

@@ -26,10 +26,10 @@ interface WeekManagerProps {
   weeks: Week[];
   onBack: () => void;
   onAddLesson: (weekId: number, weekNumber: number) => void;
-  onViewDetails: (weekNumber: number) => void;
+  onViewDetails: (weekId: number, weekNumber: number) => void;
   onUnlockWeek: (weekNumber: number) => void;
   onAddWeek: () => void;
-  onDeleteWeek: (weekNumber: number) => void;
+  onDeleteWeek: (weekId: number, weekNumber: number) => void;
 }
 
 export const WeekManager = ({
@@ -44,7 +44,7 @@ export const WeekManager = ({
 }: WeekManagerProps) => {
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
 
-  const handleDeleteWeek = (weekNumber: number, lessonsCount: number) => {
+  const handleDeleteWeek = (weekId: number, weekNumber: number, lessonsCount: number) => {
     if (lessonsCount > 0) {
       toast({
         title: "No se puede eliminar",
@@ -53,7 +53,7 @@ export const WeekManager = ({
       });
       return;
     }
-    onDeleteWeek(weekNumber);
+    onDeleteWeek(weekId, weekNumber);
   };
 
   return (
@@ -145,7 +145,7 @@ export const WeekManager = ({
 
               {/* View Details Button */}
               <Button
-                onClick={() => onViewDetails(week.week)}
+                onClick={() => onViewDetails(week.id, week.week)}
                 variant="ghost"
                 size="sm"
                 className="w-full"
@@ -170,7 +170,7 @@ export const WeekManager = ({
               {/* Delete Button (only if no lessons) */}
               {week.lessons.length === 0 && (
                 <Button
-                  onClick={() => handleDeleteWeek(week.week, week.lessons.length)}
+                  onClick={() => handleDeleteWeek(week.id, week.week, week.lessons.length)}
                   variant="ghost"
                   size="sm"
                   className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"

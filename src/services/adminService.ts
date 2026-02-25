@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Curso, CrearCursoDTO, CrearSemanaDTO, Semana, ViewSemanaDTO, ViewLeccionDTO, CrearLeccionDTO, Leccion, CrearPreguntaDTO, Pregunta } from '../types/api.types';
+import type { SemanaDetalleDTO, LeccionDetalleDTO, Curso, CrearCursoDTO, CrearSemanaDTO, Semana, ViewSemanaDTO, ViewLeccionDTO, CrearLeccionDTO, Leccion, CrearPreguntaDTO, Pregunta } from '../types/api.types';
 
 export const adminService = {
   /**
@@ -49,6 +49,19 @@ export const adminService = {
     `/weeks/${cursoId}`
   );
   return response.data;
+},
+
+verDetalleSemana: async (idSemana: number): Promise<SemanaDetalleDTO> => {
+  const response = await api.get<SemanaDetalleDTO>(`/lessons/${idSemana}/detalle`);
+  return response.data;
+},
+
+eliminarLeccion: async (idLeccion: number): Promise<void> => {
+  await api.delete(`/lessons/${idLeccion}`);
+},
+
+eliminarSemana: async (semanaId: number): Promise<void> => {
+  await api.delete(`/weeks/${semanaId}`);
 },
 
 };

@@ -11,7 +11,7 @@ import { Construction } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { estudianteService } from "@/services/estudianteService";
 import { adminService } from "@/services/adminService";
-import type { Curso } from "@/types/api.types";
+import type { Curso, SemanaDetalleDTO } from "@/types/api.types";
 
 // Initial mock weeks data (retained just for rendering WeekManager for now if needed, though ideal would be fetching from backend too)
 const initialWeeksData: Record<number, Week[]> = {
@@ -49,6 +49,8 @@ const AdminDashboard = () => {
   const [selectedWeekIdForLesson, setSelectedWeekIdForLesson] = useState<number | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedWeekForDetails, setSelectedWeekForDetails] = useState<number | null>(null);
+  const [selectedWeekIdForDetails, setSelectedWeekIdForDetails] = useState<number | null>(null);
+  const [weekDetailsData, setWeekDetailsData] = useState<SemanaDetalleDTO | null>(null);
   const [isAddWeekModalOpen, setIsAddWeekModalOpen] = useState(false);
 
   useEffect(() => {
@@ -118,9 +120,16 @@ const AdminDashboard = () => {
     setIsLessonModalOpen(true);
   };
 
-  const handleViewDetails = (weekNumber: number) => {
-    setSelectedWeekForDetails(weekNumber);
-    setIsDetailsModalOpen(true);
+  const handleViewDetails = async (weekId: number, weekNumber: number) => {
+    try {
+      const data = await adminService.verDetalleSemana(weekId);
+      setWeekDetailsData(data);
+      setSelectedWeekForDetails(weekNumber);
+      setSelectedWeekIdForDetails(weekId);
+      setIsDetailsModalOpen(true);
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudieron cargar los detalles de la semana.", variant: "destructive" });
+    }
   };
 
   const handleUnlockWeek = (weekNumber: number) => {
@@ -177,18 +186,28 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteWeek = (weekNumber: number) => {
+  const handleDeleteWeek = async (weekId: number, weekNumber: number) => {
     if (selectedCourse === null) return;
     
-    setWeeksData(prev => ({
-      ...prev,
-      [selectedCourse]: prev[selectedCourse].filter(w => w.week !== weekNumber),
-    }));
-    
-    toast({
-      title: "Semana eliminada",
-      description: `La Semana ${weekNumber} ha sido eliminada.`,
-    });
+    if (!window.confirm(`¿Estás seguro de eliminar la semana ${weekNumber}?`)) return;
+
+    try {
+      await adminService.eliminarSemana(weekId);
+      
+      setWeeksData(prev => ({
+        ...prev,
+        [selectedCourse]: prev[selectedCourse].filter(w => w.week !== weekNumber),
+      }));
+      
+      setIsDetailsModalOpen(false);
+      
+      toast({
+        title: "Semana eliminada",
+        description: `La Semana ${weekNumber} ha sido eliminada.`,
+      });
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo eliminar la semana.", variant: "destructive" });
+    }
   };
 
   const handleSaveLesson = (lesson: {
@@ -225,35 +244,62 @@ const AdminDashboard = () => {
     });
   };
 
-  const handleDeleteLesson = (lessonId: string) => {
+  const handleDeleteLesson = async (lessonId: string) => {
     if (selectedCourse === null || selectedWeekForDetails === null) return;
     
-    setWeeksData(prev => ({
-      ...prev,
-      [selectedCourse]: prev[selectedCourse].map(w =>
-        w.week === selectedWeekForDetails
-          ? { ...w, lessons: w.lessons.filter(l => l.id !== lessonId) }
-          : w
-      ),
-    }));
-    
-    toast({
-      title: "Lección eliminada",
-      description: "La lección ha sido eliminada exitosamente.",
-    });
+    if (!window.confirm("¿Estás seguro de eliminar esta lección?")) return;
+
+    try {
+      await adminService.eliminarLeccion(Number(lessonId));
+
+      setWeeksData(prev => ({
+        ...prev,
+        [selectedCourse]: prev[selectedCourse].map(w =>
+          w.week === selectedWeekForDetails
+            ? { ...w, lessons: w.lessons.filter(l => l.id !== lessonId) }
+            : w
+        ),
+      }));
+
+      setWeekDetailsData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          lecciones: prev.lecciones.filter((l) => String(l.idLeccion) !== lessonId)
+        };
+      });
+      
+      toast({
+        title: "Lección eliminada",
+        description: "La lección ha sido eliminada exitosamente.",
+      });
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo eliminar la lección.", variant: "destructive" });
+    }
   };
 
   if (!user) return null;
 
   // Get lessons for details modal
   const getWeekLessons = () => {
-    if (selectedCourse === null || selectedWeekForDetails === null) return [];
-    const week = weeksData[selectedCourse]?.find(w => w.week === selectedWeekForDetails);
-    if (!week) return [];
+    if (!weekDetailsData) return [];
     
-    return week.lessons.map(l => ({
-      ...l,
-      questions: mockLessonDetails[l.id]?.questions || [],
+    return weekDetailsData.lecciones.map(l => ({
+      id: String(l.idLeccion),
+      name: l.nombre,
+      description: `Orden: ${l.orden}`,
+      questionsCount: l.preguntas ? l.preguntas.length : 0,
+      questions: (l.preguntas || []).map(p => {
+        const correctIdx = p.alternativas.findIndex(a => a.isCorrecta);
+        return {
+          id: String(p.idPregunta),
+          text: p.textoPregunta,
+          options: p.alternativas.map(a => a.texto),
+          correctAnswer: correctIdx !== -1 ? correctIdx : 0,
+          solutionText: p.textoSolucion || undefined,
+          solutionImage: p.solucionImagenUrl || undefined,
+        };
+      })
     }));
   };
 
@@ -353,8 +399,9 @@ const AdminDashboard = () => {
             setSelectedWeekForDetails(null);
           }}
           weekNumber={selectedWeekForDetails}
-          lessons={getWeekLessons()}
+          lessons={getWeekLessons() as any}
           onDeleteLesson={handleDeleteLesson}
+          onDeleteWeek={() => handleDeleteWeek(selectedWeekIdForDetails!, selectedWeekForDetails)}
         />
       )}
 

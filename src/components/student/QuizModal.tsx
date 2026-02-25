@@ -94,20 +94,18 @@ const ActiveQuizView = ({ state, actions, lessonTitle }: { state: any, actions: 
             className="space-y-6"
           >
             <div className="flex flex-col gap-4">
-              <h3 className="text-lg font-semibold text-foreground">{state.currentQuestion.text}</h3>
-              {/* Imagen de la pregunta o placeholder de prueba si no viene */}
-              <div className="w-full flex justify-center bg-secondary/20 rounded-xl p-4 border border-border">
-                <img 
-                  src={state.currentQuestion.imageUrl || "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp"} 
-                  alt="Pregunta" 
-                  className="max-h-64 object-contain rounded-lg"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp") {
-                       e.currentTarget.src = "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp";
-                    }
-                  }}
-                />
-              </div>
+              {state.currentQuestion.text && (
+                <h3 className="text-lg font-semibold text-foreground">{state.currentQuestion.text}</h3>
+              )}
+              {state.currentQuestion.imageUrl && (
+                <div className="w-full flex justify-center bg-secondary/20 rounded-xl p-4 border border-border">
+                  <img 
+                    src={state.currentQuestion.imageUrl} 
+                    alt="Pregunta" 
+                    className="max-h-64 object-contain rounded-lg"
+                  />
+                </div>
+              )}
             </div>
             
             <div className="space-y-3">
@@ -205,16 +203,13 @@ const QuizResultsView = ({ state, onClose }: { state: any, onClose: () => void }
                         <div className="mt-3 p-3 bg-card rounded-lg border border-border">
                           <p className="text-xs font-medium text-muted-foreground mb-2">Solución:</p>
                           {item.feedback?.solucionTexto && <p className="text-sm text-foreground">{item.feedback.solucionTexto}</p>}
-                          <img 
-                            src={item.feedback?.solucionImagenUrl || "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp"} 
-                            alt="Solución" 
-                            className="mt-2 rounded-lg max-h-48 object-contain"
-                            onError={(e) => {
-                               if(e.currentTarget.src !== "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp"){
-                                   e.currentTarget.src = "https://res.cloudinary.com/drxrcueub/image/upload/v1771917207/academia_tesla/soluciones/etrzzgwyliettriqzaxy.webp";
-                               }
-                            }}
-                          />
+                          {item.feedback?.solucionImagenUrl && (
+                            <img 
+                              src={item.feedback.solucionImagenUrl} 
+                              alt="Solución" 
+                              className="mt-2 rounded-lg max-h-48 object-contain"
+                            />
+                          )}
                         </div>
                       </div>
                     )}
