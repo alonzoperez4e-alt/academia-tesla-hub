@@ -7,6 +7,7 @@ import { WeekManager, Week, Lesson } from "@/components/admin/WeekManager";
 import { LessonFormModal } from "@/components/admin/LessonFormModal";
 import { WeekDetailsModal } from "@/components/admin/WeekDetailsModal";
 import { WeekFormModal } from "@/components/admin/WeekFormModal";
+import { GestionarRanking } from "@/components/admin/GestionarRanking";
 import { Construction } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { estudianteService } from "@/services/estudianteService";
@@ -367,11 +368,9 @@ const AdminDashboard = () => {
         />
 
         <main className="p-4 lg:p-6">
-          {activeItem === "cuestionarios" ? (
-            renderQuestionnaireManagement()
-          ) : (
-            renderComingSoon()
-          )}
+          {activeItem === "cuestionarios" && renderQuestionnaireManagement()}
+          {activeItem === "ranking" && <GestionarRanking />}
+          {activeItem !== "cuestionarios" && activeItem !== "ranking" && renderComingSoon()}
         </main>
       </div>
 
