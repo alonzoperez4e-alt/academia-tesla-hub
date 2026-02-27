@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { CourseSelector } from "@/components/admin/CourseSelector";
@@ -22,6 +22,8 @@ const initialWeeksData: Record<number, Week[]> = {
 // Mock lesson details
 const mockLessonDetails: Record<string, any> = {};
 
+const adminSections = ["cuestionarios", "ranking", "alumnos", "configuracion"] as const;
+
 interface User {
   code: string;
   name: string;
@@ -32,7 +34,14 @@ interface User {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeItem, setActiveItem] = useState("cuestionarios");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialSection = searchParams.get("section");
+  const initialActiveItem = initialSection && adminSections.includes(initialSection as any)
+    ? initialSection
+    : "cuestionarios";
+
+  const [activeItem, setActiveItem] = useState(initialActiveItem);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<User | null>(null);
   
@@ -63,6 +72,26 @@ const AdminDashboard = () => {
     setUser(JSON.parse(userData));
     fetchCourses();
   }, [navigate]);
+
+  // Persist section in URL and keep it in sync without causing flicker.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("section", activeItem);
+    setSearchParams(params, { replace: true });
+  }, [activeItem, setSearchParams]);
+
+  // Sync section when navigating with back/forward.
+  useEffect(() => {
+    const handlePopstate = () => {
+      const sectionFromUrl = new URLSearchParams(window.location.search).get("section");
+      if (sectionFromUrl && adminSections.includes(sectionFromUrl as any) && sectionFromUrl !== activeItem) {
+        setActiveItem(sectionFromUrl);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopstate);
+    return () => window.removeEventListener("popstate", handlePopstate);
+  }, [activeItem]);
 
   const fetchCourses = async () => {
     setIsLoadingCourses(true);
