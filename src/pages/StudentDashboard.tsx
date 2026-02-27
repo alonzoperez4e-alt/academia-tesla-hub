@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Construction, Loader2 } from "lucide-react";
 
 // Componentes UI
@@ -14,10 +14,19 @@ import { QuizModal } from "@/components/student/QuizModal";
 // Hook
 import { useStudentDashboard } from "@/hooks/studentDashboard/useStudentDashboard";
 
+const studentTabs = ["path", "ranking", "profile", "notifications"] as const;
+
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialTabParam = searchParams.get("tab");
+  const initialTab = studentTabs.includes(initialTabParam as any)
+    ? (initialTabParam as (typeof studentTabs)[number])
+    : "path";
+
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"path" | "ranking" | "profile" | "notifications">("path");
+  const [activeTab, setActiveTab] = useState<typeof studentTabs[number]>(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -27,6 +36,26 @@ const StudentDashboard = () => {
   }, [navigate]);
 
   const { state, actions } = useStudentDashboard(user, activeTab);
+
+  // Persist tab in URL without causing toggle loops; also keep URL in sync when user switches tab.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", activeTab);
+    setSearchParams(params, { replace: true });
+  }, [activeTab, setSearchParams]);
+
+  // Sync tab when user navigates with back/forward buttons.
+  useEffect(() => {
+    const handlePopstate = () => {
+      const tabFromUrl = new URLSearchParams(window.location.search).get("tab");
+      if (tabFromUrl && studentTabs.includes(tabFromUrl as any)) {
+        setActiveTab(tabFromUrl as (typeof studentTabs)[number]);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopstate);
+    return () => window.removeEventListener("popstate", handlePopstate);
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });

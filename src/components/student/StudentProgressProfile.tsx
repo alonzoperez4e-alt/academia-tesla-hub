@@ -3,7 +3,7 @@ import StudentDinoGif from './StudentDinoGif';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Target, TrendingUp, Star, User, IdCard, GraduationCap, Zap, Flame } from 'lucide-react';
+import { Trophy, Target, TrendingUp, Star, User, IdCard, GraduationCap, Zap, Flame, Lock } from 'lucide-react';
 import type { EstadoMascota } from '@/types/api.types';
 
 interface StudentProgressProfileProps {
@@ -49,12 +49,14 @@ const StudentProgressProfile = ({
 
   const resolvedPetState: EstadoMascota = petState ?? 'Huevo';
 
-  const stageConfig: { key: EstadoMascota; emoji: string; label: string; description: string }[] = [
-    { key: 'Huevo', emoji: '🥚', label: 'Huevo', description: '0-1249 EXP' },
-    { key: 'Agrietándose', emoji: '🐣', label: 'Agrietándose', description: '1250-2499 EXP' },
-    { key: 'Naciendo', emoji: '🦖', label: 'Naciendo', description: '2500-3749 EXP' },
-    { key: 'Completamente Crecido', emoji: '🦕', label: 'Completamente Crecido', description: '3750+ EXP' },
+  const stageConfig: { key: EstadoMascota; mediaSrc: string; label: string; description: string }[] = [
+    { key: 'Huevo', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771864271/egg1_poqxvi.mp4', label: 'Inicio', description: '0-1249 EXP' },
+    { key: 'Agrietándose', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771864394/cracking1_js5lyl.mp4', label: 'Básico', description: '1250-2499 EXP' },
+    { key: 'Naciendo', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771883596/CreciendoSopi-Picsart-BackgroundRemover_zpt6i7.mp4', label: 'Intermedio', description: '2500-3749 EXP' },
+    { key: 'Completamente Crecido', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771989927/DinoGrande-Picsart-BackgroundRemover_j4vtmw.mp4', label: 'Postulante', description: '3750+ EXP' },
   ];
+
+  const petStateDisplayLabel = stageConfig.find((stage) => stage.key === resolvedPetState)?.label ?? resolvedPetState;
 
   const activeStageIndex = stageConfig.findIndex((stage) => stage.key === resolvedPetState);
   const normalizedStageIndex = activeStageIndex === -1 ? 0 : activeStageIndex;
@@ -253,7 +255,7 @@ const StudentProgressProfile = ({
                       {totalExp} EXP
                     </Badge>
                     <Badge className="bg-blue-500 text-white px-4 py-2 text-sm sm:text-base font-bold shadow-lg">
-                      {resolvedPetState}
+                      {petStateDisplayLabel}
                     </Badge>
                   </div>
 
@@ -302,10 +304,10 @@ const StudentProgressProfile = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.5 }}
           >
-            <Card className="bg-gradient-to-r from-accent/10 to-primary/10 border-accent/20">
+            <Card className="bg-[#F3F4F6] border-primary/20 shadow-lg">
               <CardContent className="p-4 sm:p-6">
                 <h3 className="font-bold text-base sm:text-lg text-center text-foreground mb-4 sm:mb-6">
-                  🌱 Etapas de Evolución de tu Personaje
+                  Etapas de Evolución de tu Personaje
                 </h3>
                 
                 {/* Grid responsive: 2 columnas en móvil, 4 en desktop */}
@@ -313,6 +315,7 @@ const StudentProgressProfile = ({
                   {stageConfig.map((stage, index) => {
                     const isActive = index === normalizedStageIndex;
                     const isCompleted = index < normalizedStageIndex;
+                    const isLocked = index > normalizedStageIndex;
 
                     return (
                       <div key={stage.key} className="flex flex-col items-center">
@@ -320,19 +323,32 @@ const StudentProgressProfile = ({
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ delay: 1 + index * 0.1, duration: 0.3 }}
-                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-2xl sm:text-3xl mb-2 transition-all duration-500 ${
-                            isCompleted
-                              ? 'bg-green-500 text-white shadow-lg scale-105 ring-2 ring-green-300'
-                              : isActive
-                              ? 'bg-primary text-primary-foreground shadow-xl scale-110 ring-4 ring-primary/50 animate-pulse'
-                              : 'bg-muted text-muted-foreground opacity-50'
-                          }`}
+                          className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center mb-2 transition-all duration-500 overflow-hidden rounded-full ${
+                            isActive ? 'scale-105' : isCompleted ? 'scale-100' : 'opacity-80'
+                          } ${isLocked ? 'bg-muted/50' : ''}`}
                         >
-                          {stage.emoji}
+                          {isLocked ? (
+                            <Lock className="w-6 h-6 text-muted-foreground" aria-label="Etapa bloqueada" />
+                          ) : (
+                            <video
+                              playsInline
+                              autoPlay
+                              loop
+                              muted
+                              controls={false}
+                              controlsList="nodownload noplaybackrate nofullscreen"
+                              disablePictureInPicture
+                              aria-hidden="true"
+                              tabIndex={-1}
+                              className="h-full w-full object-contain"
+                            >
+                              <source src={stage.mediaSrc} type="video/mp4" />
+                            </video>
+                          )}
                         </motion.div>
                         
                         <span className={`text-xs sm:text-sm font-bold text-center mb-1 ${
-                          isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                          isActive ? 'text-primary' : 'text-muted-foreground'
                         }`}>
                           {stage.label}
                         </span>
