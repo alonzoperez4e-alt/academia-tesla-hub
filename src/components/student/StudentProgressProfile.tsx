@@ -53,7 +53,7 @@ const StudentProgressProfile = ({
     { key: 'Huevo', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771864271/egg1_poqxvi.mp4', label: 'Inicio', description: '0-1249 EXP' },
     { key: 'Agrietándose', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771864394/cracking1_js5lyl.mp4', label: 'Básico', description: '1250-2499 EXP' },
     { key: 'Naciendo', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771883596/CreciendoSopi-Picsart-BackgroundRemover_zpt6i7.mp4', label: 'Intermedio', description: '2500-3749 EXP' },
-    { key: 'Completamente Crecido', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1772464067/WhatsApp_Video_2026-03-01_at_10_20_45_PM-Picsart-BackgroundRemover_rueysx.mp4', label: 'Postulante', description: '3750+ EXP' },
+    { key: 'Completamente Crecido', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1772465029/Postulante_bqmn0z.mp4', label: 'Postulante', description: '3750+ EXP' },
   ];
 
   const petStateDisplayLabel = stageConfig.find((stage) => stage.key === resolvedPetState)?.label ?? resolvedPetState;
