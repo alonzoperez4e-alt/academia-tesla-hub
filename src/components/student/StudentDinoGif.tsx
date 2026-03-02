@@ -57,7 +57,7 @@ const StudentDinoGif = ({
       egg: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771864271/egg1_poqxvi.mp4", label: "Mascota etapa huevo" },
       cracking: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771864394/cracking1_js5lyl.mp4", label: "Mascota agrietándose" },
       hatching: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771883596/CreciendoSopi-Picsart-BackgroundRemover_zpt6i7.mp4", label: "Mascota naciendo" },
-      grown: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771989927/DinoGrande-Picsart-BackgroundRemover_j4vtmw.mp4", label: "Mascota completamente crecida" },
+      grown: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1772464067/WhatsApp_Video_2026-03-01_at_10_20_45_PM-Picsart-BackgroundRemover_rueysx.mp4", label: "Mascota completamente crecida" },
     };
 
     const asset = stageToFile[stage];
