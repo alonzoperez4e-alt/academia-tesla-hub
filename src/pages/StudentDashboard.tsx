@@ -167,7 +167,7 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-secondary bg-[#F3F4F6]">
       <GamifiedStatusBar
         userName={user.name}
         userCode={user.code}
