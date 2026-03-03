@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { CourseSelector } from "@/components/admin/CourseSelector";
@@ -7,6 +7,7 @@ import { WeekManager, Week, Lesson } from "@/components/admin/WeekManager";
 import { LessonFormModal } from "@/components/admin/LessonFormModal";
 import { WeekDetailsModal } from "@/components/admin/WeekDetailsModal";
 import { WeekFormModal } from "@/components/admin/WeekFormModal";
+import { GestionarRanking } from "@/components/admin/GestionarRanking";
 import { Construction } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { estudianteService } from "@/services/estudianteService";
@@ -21,6 +22,8 @@ const initialWeeksData: Record<number, Week[]> = {
 // Mock lesson details
 const mockLessonDetails: Record<string, any> = {};
 
+const adminSections = ["cuestionarios", "ranking", "alumnos", "configuracion"] as const;
+
 interface User {
   code: string;
   name: string;
@@ -31,7 +34,14 @@ interface User {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeItem, setActiveItem] = useState("cuestionarios");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialSection = searchParams.get("section");
+  const initialActiveItem = initialSection && adminSections.includes(initialSection as any)
+    ? initialSection
+    : "cuestionarios";
+
+  const [activeItem, setActiveItem] = useState(initialActiveItem);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<User | null>(null);
   
@@ -62,6 +72,26 @@ const AdminDashboard = () => {
     setUser(JSON.parse(userData));
     fetchCourses();
   }, [navigate]);
+
+  // Persist section in URL and keep it in sync without causing flicker.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("section", activeItem);
+    setSearchParams(params, { replace: true });
+  }, [activeItem, setSearchParams]);
+
+  // Sync section when navigating with back/forward.
+  useEffect(() => {
+    const handlePopstate = () => {
+      const sectionFromUrl = new URLSearchParams(window.location.search).get("section");
+      if (sectionFromUrl && adminSections.includes(sectionFromUrl as any) && sectionFromUrl !== activeItem) {
+        setActiveItem(sectionFromUrl);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopstate);
+    return () => window.removeEventListener("popstate", handlePopstate);
+  }, [activeItem]);
 
   const fetchCourses = async () => {
     setIsLoadingCourses(true);
@@ -367,11 +397,9 @@ const AdminDashboard = () => {
         />
 
         <main className="p-4 lg:p-6">
-          {activeItem === "cuestionarios" ? (
-            renderQuestionnaireManagement()
-          ) : (
-            renderComingSoon()
-          )}
+          {activeItem === "cuestionarios" && renderQuestionnaireManagement()}
+          {activeItem === "ranking" && <GestionarRanking />}
+          {activeItem !== "cuestionarios" && activeItem !== "ranking" && renderComingSoon()}
         </main>
       </div>
 

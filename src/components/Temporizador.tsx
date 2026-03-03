@@ -10,14 +10,14 @@ const Temporizador = () => {
   }, []);
 
   return (
-    <div className="inline-flex flex-wrap items-center justify-center gap-2 md:gap-3">
+    <div className="inline-flex flex-nowrap items-center justify-center gap-1.5 sm:gap-3 overflow-x-auto px-1">
       {[{ label: "Días", value: timeLeft.days }, { label: "Horas", value: timeLeft.hours }, { label: "Min", value: timeLeft.minutes }, { label: "Seg", value: timeLeft.seconds }].map((item) => (
         <div
           key={item.label}
-          className="bg-card border border-border rounded-2xl px-3.5 py-3 md:px-5 md:py-4 shadow-md min-w-[80px] md:min-w-[104px] text-center transition-transform duration-200 hover:-translate-y-0.5"
+          className="bg-card border border-border rounded-2xl px-2.5 py-2 sm:px-3.5 sm:py-3 md:px-5 md:py-4 shadow-md min-w-[64px] sm:min-w-[80px] md:min-w-[104px] text-center transition-transform duration-200 hover:-translate-y-0.5"
         >
-          <div className="font-mono font-extrabold text-2xl md:text-4xl text-primary leading-none drop-shadow-sm">{item.value}</div>
-          <div className="text-[10px] md:text-sm text-muted-foreground mt-1 font-semibold tracking-wide">{item.label}</div>
+          <div className="font-mono font-extrabold text-xl sm:text-2xl md:text-4xl text-primary leading-none drop-shadow-sm">{item.value}</div>
+          <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 font-semibold tracking-wide">{item.label}</div>
         </div>
       ))}
     </div>
