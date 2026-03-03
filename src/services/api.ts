@@ -13,11 +13,17 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = authSession.getAccessToken();
-  if (token) {
+  // Evitamos enviar el access token de autorización en rutas de login o refresh
+  if (token && !config.url?.includes('/auth/refresh') && !config.url?.includes('/auth/login')) {
     if (!config.headers) {
       config.headers = {} as any;
     }
-    config.headers.Authorization = `Bearer ${token}`;
+    // Asegurar compatibilidad estricta con AxiosHeaders en Axios 1.x+
+    if (typeof config.headers.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -48,7 +54,11 @@ api.interceptors.response.use(
     if (isRefreshing) {
       return new Promise((resolve) => {
         queue.push((newToken: string) => {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          if (typeof originalRequest.headers.set === 'function') {
+            originalRequest.headers.set('Authorization', `Bearer ${newToken}`);
+          } else {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          }
           resolve(api(originalRequest));
         });
       });
@@ -56,11 +66,17 @@ api.interceptors.response.use(
 
     isRefreshing = true;
     try {
-      const { data } = await api.post('/auth/refresh'); // usa cookie HttpOnly
+      // Forzar explícitamente el uso de credenciales para mandar la cookie al backend en la petición y usar el cliente default.
+      const { data } = await api.post('/auth/refresh', {}, { withCredentials: true }); 
       authSession.set(data.accessToken, data.role ?? authSession.getRole());
       flushQueue(data.accessToken);
 
-      originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+      // Mutamos limpiamente utilizando AxiosHeaders (compatible con Axios >= 1.x)
+      if (typeof originalRequest.headers.set === 'function') {
+        originalRequest.headers.set('Authorization', `Bearer ${data.accessToken}`);
+      } else {
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+      }
       return api(originalRequest);
     } catch (refreshError) {
       authSession.clear();
