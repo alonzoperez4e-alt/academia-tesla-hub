@@ -210,9 +210,11 @@ const StudentDashboard = () => {
           isOpen={state.isQuizOpen}
           onClose={actions.closeQuiz}
           lessonTitle={state.currentQuiz.title}
+            lessonId={state.currentQuiz.idLeccion}
           questions={state.currentQuiz.questions}
           onComplete={actions.submitQuizAnswers}
           timePerQuestion={180}
+            userId={user.id}
         />
       )}
     </div>

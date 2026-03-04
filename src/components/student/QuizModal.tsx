@@ -20,15 +20,17 @@ interface QuizModalProps {
   isOpen: boolean;
   onClose: () => void;
   lessonTitle: string;
+  lessonId: number;
   questions: QuizQuestion[];
   onComplete: (selectedAnswers: Record<string, number>) => Promise<ResultadoEvaluacionDTO | null>;
   timePerQuestion?: number;
+  userId?: number;
 }
 
 export const QuizModal = ({
-  isOpen, onClose, lessonTitle, questions, onComplete, timePerQuestion = 180,
+  isOpen, onClose, lessonTitle, lessonId, questions, onComplete, timePerQuestion = 180, userId,
 }: QuizModalProps) => {
-  const { state, actions } = useQuizLogic(isOpen, questions, timePerQuestion, onComplete);
+  const { state, actions } = useQuizLogic(isOpen, questions, timePerQuestion, onComplete, lessonId, userId);
 
   const handleClose = () => {
     actions.resetQuiz();
@@ -39,7 +41,12 @@ export const QuizModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border p-0">
+      <DialogContent
+        className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border p-0"
+        // Escudo: evitar que Escape o clic fuera cierren y reseteen el progreso
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
         
         {/* FIX: Título y descripción ocultos para la accesibilidad (quita los errores de consola) */}
         <DialogTitle className="sr-only">Cuestionario: {lessonTitle}</DialogTitle>

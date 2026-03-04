@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { usePersistenciaLeccion } from "./usePersistenciaLeccion";
 import type { QuizQuestion } from "@/components/student/QuizModal";
 import type { ResultadoEvaluacionDTO, FeedbackPreguntaDTO } from "@/types/api.types";
 
@@ -13,41 +14,44 @@ export const useQuizLogic = (
   isOpen: boolean,
   questions: QuizQuestion[],
   timePerQuestion: number,
-  onComplete: (answers: Record<string, number>) => Promise<ResultadoEvaluacionDTO | null>
+  onComplete: (answers: Record<string, number>) => Promise<ResultadoEvaluacionDTO | null>,
+  lessonId?: number,
+  _userId?: number,
 ) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  
-  const [timeLeft, setTimeLeft] = useState(timePerQuestion);
+  const {
+    estadoLeccion,
+    setEstadoLeccion,
+    obtenerSegundosRestantes,
+    limpiarProgreso,
+  } = usePersistenciaLeccion(lessonId ?? null, timePerQuestion / 60);
+
+  const [timeLeft, setTimeLeft] = useState(() => obtenerSegundosRestantes());
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [showingResults, setShowingResults] = useState(false);
   const [resultado, setResultado] = useState<ResultadoEvaluacionDTO | null>(null);
   const [resultItems, setResultItems] = useState<QuizResultItem[]>([]);
-
-  const currentQuestion = questions[currentQuestionIndex];
+  const loading = !estadoLeccion;
   const totalQuestions = questions.length;
+  const placeholderQuestion = questions[0] ?? { id: "", text: "", options: [], alternativaIds: [] };
+  const currentQuestion = estadoLeccion
+    ? questions[estadoLeccion.indicePreguntaActual] ?? placeholderQuestion
+    : placeholderQuestion;
 
-  // 1. Manejo seguro del temporizador (Blind decrement)
-  useEffect(() => {
-    if (!isOpen || showingResults || isSubmitting) return;
-    const timer = setInterval(() => setTimeLeft((prev) => Math.max(0, prev - 1)), 1000);
-    return () => clearInterval(timer);
-  }, [isOpen, showingResults, isSubmitting]);
+  // No forzamos saltos: el índice guardado en caché dicta la posición
 
-  // 2. Reaccionar cuando el tiempo se agota (Evita el "Stale Closure")
-  useEffect(() => {
-    if (timeLeft === 0) {
-      handleNextQuestion();
+  const buildFinalAnswers = useCallback(() => {
+    if (!estadoLeccion) return {} as Record<string, number>;
+
+    const answers = { ...estadoLeccion.respuestas } as Record<string, number>;
+    const question = questions[estadoLeccion.indicePreguntaActual];
+
+    if (question && estadoLeccion.selectedAnswer !== null) {
+      answers[question.id] = estadoLeccion.selectedAnswer;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft]);
 
-  // 3. Resetear tiempo al cambiar de pregunta
-  useEffect(() => {
-    setTimeLeft(timePerQuestion);
-  }, [currentQuestionIndex, timePerQuestion]);
+    return answers;
+  }, [estadoLeccion, questions]);
 
   const submitQuiz = useCallback(async (finalAnswersAccumulator: Record<string, number>) => {
     setIsSubmitting(true);
@@ -64,55 +68,116 @@ export const useQuizLogic = (
 
       setResultItems(items);
       setShowingResults(true);
+      limpiarProgreso();
     } catch (error) {
       console.error("Error al enviar quiz:", error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [onComplete, questions]);
+  }, [onComplete, questions, limpiarProgreso]);
+
+  const submitQuizWithCurrentAnswers = useCallback(() => {
+    if (showingResults || isSubmitting) return;
+    const finalAnswers = buildFinalAnswers();
+    submitQuiz(finalAnswers);
+  }, [buildFinalAnswers, isSubmitting, showingResults, submitQuiz]);
+
+  // Control estricto del cronómetro: autoenvío si el tiempo ya expiró
+  useEffect(() => {
+    if (!isOpen || showingResults || isSubmitting || !estadoLeccion) return;
+
+    const remaining = obtenerSegundosRestantes();
+    setTimeLeft(remaining);
+
+    if (remaining <= 0) {
+      submitQuizWithCurrentAnswers();
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const segundos = obtenerSegundosRestantes();
+      setTimeLeft(segundos);
+
+      if (segundos <= 0) {
+        clearInterval(timer);
+        submitQuizWithCurrentAnswers();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isOpen, isSubmitting, showingResults, obtenerSegundosRestantes, submitQuizWithCurrentAnswers]);
+
+  const setSelectedAnswer = useCallback((answer: number | null) => {
+    setEstadoLeccion((prev) => {
+      if (!prev) return prev;
+      return { ...prev, selectedAnswer: answer };
+    });
+  }, [setEstadoLeccion]);
 
   const handleNextQuestion = useCallback(() => {
-    const updatedAnswers = { ...answers };
-    if (selectedAnswer !== null && currentQuestion) {
-      updatedAnswers[currentQuestion.id] = selectedAnswer;
-    }
-    setAnswers(updatedAnswers);
+    if (!estadoLeccion) return;
 
-    if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setSelectedAnswer(null);
-    } else {
+    const updatedAnswers = buildFinalAnswers();
+    const isLastQuestion = estadoLeccion.indicePreguntaActual >= totalQuestions - 1;
+
+    if (isLastQuestion) {
       submitQuiz(updatedAnswers);
+      setEstadoLeccion((prev) => ({ ...prev, respuestas: updatedAnswers }));
+      return;
     }
-  }, [selectedAnswer, currentQuestionIndex, totalQuestions, currentQuestion, answers, submitQuiz]);
 
-  const resetQuiz = () => {
-    setCurrentQuestionIndex(0);
-    setSelectedAnswer(null);
-    setAnswers({});
+    const nextIndex = Math.min(estadoLeccion.indicePreguntaActual + 1, totalQuestions - 1);
+
+    setEstadoLeccion((prev) => ({
+      ...prev,
+      respuestas: updatedAnswers,
+      indicePreguntaActual: nextIndex,
+      selectedAnswer: updatedAnswers[questions[nextIndex]?.id] ?? null,
+    }));
+  }, [buildFinalAnswers, estadoLeccion, questions, setEstadoLeccion, submitQuiz, totalQuestions]);
+
+  const handleResumeContinue = useCallback(() => {
+    /* no-op after rollback */
+  }, []);
+
+  const handleResumeFinish = useCallback(() => {
+    /* no-op after rollback */
+  }, []);
+
+  const resetQuiz = useCallback(() => {
+    setEstadoLeccion({
+      indicePreguntaActual: 0,
+      respuestas: {},
+      selectedAnswer: null,
+      tiempoFin: Date.now() + timePerQuestion * 1000,
+    });
     setTimeLeft(timePerQuestion);
     setIsSubmitting(false);
     setShowingResults(false);
     setResultado(null);
     setResultItems([]);
-  };
+    limpiarProgreso();
+  }, [setEstadoLeccion, timePerQuestion, limpiarProgreso]);
 
   return {
     state: {
-      currentQuestionIndex,
-      selectedAnswer,
+      currentQuestionIndex: estadoLeccion?.indicePreguntaActual ?? 0,
+      selectedAnswer: estadoLeccion?.selectedAnswer ?? null,
       timeLeft,
       isSubmitting,
       showingResults,
       resultado,
       resultItems,
       currentQuestion,
-      totalQuestions
+      totalQuestions,
+      loading,
     },
     actions: {
       setSelectedAnswer,
       handleNextQuestion,
-      resetQuiz
+      resetQuiz,
+      handleResumeContinue,
+      handleResumeFinish,
     }
   };
 };

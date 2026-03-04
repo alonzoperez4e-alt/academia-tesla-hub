@@ -139,7 +139,7 @@ const Login = () => {
                   type="text"
                   value={userCode}
                   onChange={(e) => setUserCode(e.target.value)}
-                  placeholder="Ej: ALU001"
+                  placeholder="27427864"
                   className="pl-10 input-tesla h-12"
                   required
                 />
