@@ -80,6 +80,28 @@ const ActiveQuizView = ({ state, actions, lessonTitle }: { state: any, actions: 
 
   return (
     <>
+      {state.esReanudacion && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md text-center space-y-4">
+            <h3 className="text-2xl font-bold text-gray-900">¡Sesión en curso!</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Detectamos que recargaste la página. ¿Quieres continuar donde te quedaste o finalizar ahora?
+            </p>
+            <div className="text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg py-2 px-3 inline-flex items-center gap-2">
+              El tiempo sigue corriendo: {formatTime(state.timeLeft)}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <Button onClick={actions.handleResumeContinue} className="w-full" variant="default">
+                Continuar
+              </Button>
+              <Button onClick={actions.handleResumeFinish} className="w-full" variant="destructive">
+                Terminar y enviar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sticky top-0 z-10 bg-card border-b border-border p-4">
         <div className="flex items-center justify-between mb-3">
           <div>

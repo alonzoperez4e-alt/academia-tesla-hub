@@ -38,8 +38,17 @@ export const useStudentDashboard = (user: any, activeTab: string) => {
       try {
         const resumenes = await estudianteService.obtenerCursos();
         setCursos(resumenes);
-        const primerHabilitado = resumenes.find((c) => c.isHabilitado);
-        if (primerHabilitado) setSelectedCursoId(primerHabilitado.idCurso);
+
+        const stored = localStorage.getItem("student_selected_course");
+        const storedId = stored ? parseInt(stored, 10) : null;
+        const existsStored = storedId && resumenes.some((c) => c.idCurso === storedId && c.isHabilitado);
+
+        if (existsStored) {
+          setSelectedCursoId(storedId!);
+        } else {
+          const primerHabilitado = resumenes.find((c) => c.isHabilitado);
+          if (primerHabilitado) setSelectedCursoId(primerHabilitado.idCurso);
+        }
       } catch (error) {
         toast({ title: "Error", description: "No se pudieron cargar los cursos.", variant: "destructive" });
       } finally {
@@ -172,6 +181,13 @@ useEffect(() => {
       return null;
     }
   }, [currentQuiz, user, selectedCursoId, rankingData]);
+
+  // Persistir selección de curso
+  useEffect(() => {
+    if (selectedCursoId) {
+      localStorage.setItem("student_selected_course", String(selectedCursoId));
+    }
+  }, [selectedCursoId]);
 
   // 4. Datos Derivados (Memoizados)
   const camino = selectedCursoId ? caminoPorCurso[selectedCursoId] ?? null : null;

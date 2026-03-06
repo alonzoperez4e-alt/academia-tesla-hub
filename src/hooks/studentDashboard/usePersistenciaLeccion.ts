@@ -5,6 +5,8 @@ type PersistedLessonState = {
   respuestas: Record<string, number>;
   selectedAnswer: number | null;
   tiempoFin: number;
+  attemptId: string;
+  enCurso: boolean;
 };
 
 const buildDefaultState = (tiempoMinutos: number): PersistedLessonState => ({
@@ -12,56 +14,93 @@ const buildDefaultState = (tiempoMinutos: number): PersistedLessonState => ({
   respuestas: {},
   selectedAnswer: null,
   tiempoFin: Date.now() + tiempoMinutos * 60 * 1000,
+  attemptId: `attempt-${Date.now()}`,
+  enCurso: true,
 });
 
 export const usePersistenciaLeccion = (
   idLeccion: number | string | null | undefined,
   tiempoMinutos: number,
 ) => {
-  // La llave solo existe cuando realmente tenemos id de lección; evita estados fantasma
   const storageKey = useMemo(
     () => (idLeccion ? `tesla_progreso_leccion_${idLeccion}` : null),
     [idLeccion]
   );
+  const reloadFlagKey = useMemo(
+    () => (idLeccion ? `tesla_reloading_lesson_${idLeccion}` : null),
+    [idLeccion]
+  );
 
-  const [estadoLeccion, setEstadoLeccion] = useState<PersistedLessonState | null>(() => {
-    if (!storageKey) return null;
+  const [estadoLeccion, setEstadoLeccion] = useState<PersistedLessonState | null>(null);
+  const [esReanudacion, setEsReanudacion] = useState(false);
 
-    try {
-      const progresoGuardado = localStorage.getItem(storageKey);
-      if (progresoGuardado) {
-        return JSON.parse(progresoGuardado) as PersistedLessonState;
-      }
-    } catch (error) {
-      console.warn("No se pudo leer el progreso guardado de la lección:", error);
-    }
-
-    return buildDefaultState(tiempoMinutos);
-  });
-
-  // Si el id llega tarde o cambia, sincronizamos desde el almacenamiento
   useEffect(() => {
-    if (!storageKey) return;
+    if (!storageKey || !reloadFlagKey) return;
 
-    try {
-      const progresoGuardado = localStorage.getItem(storageKey);
-      if (progresoGuardado) {
-        setEstadoLeccion(JSON.parse(progresoGuardado) as PersistedLessonState);
-        return;
-      }
-    } catch (error) {
-      console.warn("No se pudo leer el progreso guardado de la lección:", error);
+    const progresoGuardado = localStorage.getItem(storageKey);
+    // Bandera rápida de recarga: timestamp reciente guardado en session/local storage
+    const rawFlag = reloadFlagKey
+      ? sessionStorage.getItem(reloadFlagKey) ?? localStorage.getItem(reloadFlagKey)
+      : null;
+    const flagTimestamp = rawFlag ? Number(rawFlag) : NaN;
+    const ahora = Date.now();
+    const recargaReciente = Number.isFinite(flagTimestamp) && ahora - flagTimestamp < 8000;
+
+    const navigation = window.performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+    const navType = navigation[0]?.type;
+    // Reload real o restauración de pestaña (bfcache)
+    const esTipoRecarga = navType === "reload" || navType === "back_forward";
+    const debeMostrarModal = recargaReciente && esTipoRecarga;
+
+    // limpiar banderas inmediatamente para evitar falsos positivos posteriores
+    if (reloadFlagKey) {
+      sessionStorage.removeItem(reloadFlagKey);
+      localStorage.removeItem(reloadFlagKey);
     }
 
-    setEstadoLeccion(buildDefaultState(tiempoMinutos));
-  }, [storageKey, tiempoMinutos]);
+    if (progresoGuardado) {
+      const parsed = JSON.parse(progresoGuardado) as PersistedLessonState;
 
-  // Guardar automáticamente cada vez que cambia el estado válido
+      if (Date.now() > parsed.tiempoFin) {
+        localStorage.removeItem(storageKey);
+        setEstadoLeccion(buildDefaultState(tiempoMinutos));
+        setEsReanudacion(false);
+      } else {
+        setEstadoLeccion({
+          ...parsed,
+          attemptId: parsed.attemptId ?? `attempt-${Date.now()}`,
+          enCurso: parsed.enCurso ?? true,
+        });
+        // Solo mostramos modal si hay progreso y la sesión sigue en curso
+        setEsReanudacion(debeMostrarModal && (parsed.enCurso ?? true));
+      }
+    } else {
+      setEstadoLeccion(buildDefaultState(tiempoMinutos));
+      setEsReanudacion(false);
+    }
+  }, [storageKey, reloadFlagKey, tiempoMinutos]);
+
   useEffect(() => {
     if (storageKey && estadoLeccion) {
       localStorage.setItem(storageKey, JSON.stringify(estadoLeccion));
     }
   }, [estadoLeccion, storageKey]);
+
+  useEffect(() => {
+    if (!reloadFlagKey) return;
+
+    const stampReload = () => {
+      sessionStorage.setItem(reloadFlagKey, String(Date.now()));
+    };
+
+    window.addEventListener("beforeunload", stampReload);
+    window.addEventListener("pagehide", stampReload);
+
+    return () => {
+      window.removeEventListener("beforeunload", stampReload);
+      window.removeEventListener("pagehide", stampReload);
+    };
+  }, [reloadFlagKey]);
 
   const obtenerSegundosRestantes = useCallback(() => {
     if (!estadoLeccion) return tiempoMinutos * 60;
@@ -73,12 +112,17 @@ export const usePersistenciaLeccion = (
     if (storageKey) {
       localStorage.removeItem(storageKey);
     }
-  }, [storageKey]);
+    if (reloadFlagKey) {
+      sessionStorage.removeItem(reloadFlagKey);
+    }
+  }, [storageKey, reloadFlagKey]);
 
   return {
     estadoLeccion,
     setEstadoLeccion,
     obtenerSegundosRestantes,
     limpiarProgreso,
+    esReanudacion,
+    setEsReanudacion,
   } as const;
 };
