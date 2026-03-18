@@ -1,15 +1,16 @@
-import { Home, Trophy, User, Bell, BookOpen } from "lucide-react";
+import { Trophy, User, Bell, BookOpen, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileBottomNavProps {
-  activeTab: "path" | "ranking" | "profile" | "notifications";
-  onTabChange: (tab: "path" | "ranking" | "profile" | "notifications") => void;
+  activeTab: "path" | "ranking" | "interaction" | "profile" | "notifications";
+  onTabChange: (tab: "path" | "ranking" | "interaction" | "profile" | "notifications") => void;
   notificationCount?: number;
 }
 
 const navItems = [
   { id: "path" as const, icon: BookOpen, label: "Camino" },
   { id: "ranking" as const, icon: Trophy, label: "Ranking" },
+  { id: "interaction" as const, icon: Users, label: "Interacción" },
   { id: "profile" as const, icon: User, label: "Perfil" },
   { id: "notifications" as const, icon: Bell, label: "Alertas" },
 ];

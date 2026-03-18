@@ -7,6 +7,7 @@ import { GamifiedStatusBar } from "@/components/gamification/GamifiedStatusBar";
 import { LearningPath } from "@/components/gamification/LearningPath";
 import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
+import GroupInteraction from "@/components/student/GroupInteraction";
 import StudentDinoGif from "@/components/student/StudentDinoGif";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import { QuizModal } from "@/components/student/QuizModal";
@@ -14,7 +15,7 @@ import { QuizModal } from "@/components/student/QuizModal";
 // Hook
 import { useStudentDashboard } from "@/hooks/studentDashboard/useStudentDashboard";
 
-const studentTabs = ["path", "ranking", "profile", "notifications"] as const;
+const studentTabs = ["path", "ranking", "interaction", "profile", "notifications"] as const;
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -238,6 +239,13 @@ const StudentDashboard = () => {
           </div>
         );
 
+      case "interaction":
+        return (
+          <div className="pb-24 lg:pb-8 px-4 mt-4">
+            <GroupInteraction studentId={user.id} studentName={user.name} />
+          </div>
+        );
+
       case "profile":
         return (
           <div className="pb-24 lg:pb-8 px-4 mt-4">
@@ -336,7 +344,7 @@ const StudentDashboard = () => {
       />
 
       <div className="hidden lg:flex items-center justify-center gap-2 py-4 bg-card/95 backdrop-blur-sm border-b border-border fixed top-[88px] left-0 right-0 z-40 shadow-sm">
-        {(["path", "ranking", "profile"] as const).map((tab) => (
+        {(["path", "ranking", "interaction", "profile"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -344,7 +352,13 @@ const StudentDashboard = () => {
               activeTab === tab ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            {tab === "path" ? "El Camino" : tab === "ranking" ? "Ranking" : "Mi Perfil"}
+            {tab === "path"
+              ? "El Camino"
+              : tab === "ranking"
+                ? "Ranking"
+                : tab === "interaction"
+                  ? "Interacción"
+                  : "Mi Perfil"}
           </button>
         ))}
       </div>
@@ -353,7 +367,7 @@ const StudentDashboard = () => {
         {renderContent()}
       </main>
 
-      <MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab as any} notificationCount={3} />
+      <MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab} notificationCount={3} />
 
       {state.currentQuiz && (
         <QuizModal

@@ -259,3 +259,18 @@ export interface AlternativaDetalleDTO {
   texto: string;
   isCorrecta: boolean;
 }
+
+/** ========== Grupos (Interacción entre estudiantes) ========== */
+export interface GroupInfo {
+  id: number;
+  name: string;
+  code: string;
+  creatorId: number;
+}
+
+export interface GroupRankingEntry {
+  position: number;
+  studentId: number;
+  studentName: string;
+  groupExp: number;
+}
