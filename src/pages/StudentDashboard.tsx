@@ -15,7 +15,7 @@ import { QuizModal } from "@/components/student/QuizModal";
 // Hook
 import { useStudentDashboard } from "@/hooks/studentDashboard/useStudentDashboard";
 
-const studentTabs = ["path", "ranking", "interaction", "profile", "notifications"] as const;
+const studentTabs = ["path", "ranking", "interaction", "profile"] as const;
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -241,7 +241,7 @@ const StudentDashboard = () => {
 
       case "interaction":
         return (
-          <div className="pb-24 lg:pb-8 px-4 mt-4">
+          <div className="pb-24 lg:pb-8 px-4 mt-4 max-w-5xl mx-auto">
             <GroupInteraction studentId={user.id} studentName={user.name} />
           </div>
         );
@@ -265,8 +265,6 @@ const StudentDashboard = () => {
           </div>
         );
 
-      case "notifications":
-        return <BlockedScreen title="Próximamente" text="Esta sección estará disponible en las siguientes actualizaciones." />;
     }
   };
 
@@ -367,7 +365,7 @@ const StudentDashboard = () => {
         {renderContent()}
       </main>
 
-      <MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab} notificationCount={3} />
+      <MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
       {state.currentQuiz && (
         <QuizModal

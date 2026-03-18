@@ -301,7 +301,7 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
   };
 
   return (
-    <div key={group ? `group-${group.id}` : 'no-group'}>
+    <div key={group ? `group-${group.id}` : 'no-group'} className="max-w-4xl mx-auto space-y-4">
       {renderContent()}
     </div>
   );

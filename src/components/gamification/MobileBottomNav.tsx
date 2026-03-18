@@ -1,10 +1,9 @@
-import { Trophy, User, Bell, BookOpen, Users } from "lucide-react";
+import { Trophy, User, BookOpen, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileBottomNavProps {
-  activeTab: "path" | "ranking" | "interaction" | "profile" | "notifications";
-  onTabChange: (tab: "path" | "ranking" | "interaction" | "profile" | "notifications") => void;
-  notificationCount?: number;
+  activeTab: "path" | "ranking" | "interaction" | "profile";
+  onTabChange: (tab: "path" | "ranking" | "interaction" | "profile") => void;
 }
 
 const navItems = [
@@ -12,13 +11,11 @@ const navItems = [
   { id: "ranking" as const, icon: Trophy, label: "Ranking" },
   { id: "interaction" as const, icon: Users, label: "Interacción" },
   { id: "profile" as const, icon: User, label: "Perfil" },
-  { id: "notifications" as const, icon: Bell, label: "Alertas" },
 ];
 
 export const MobileBottomNav = ({ 
   activeTab, 
-  onTabChange, 
-  notificationCount = 0 
+  onTabChange
 }: MobileBottomNavProps) => {
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border safe-area-inset-bottom">
@@ -46,13 +43,6 @@ export const MobileBottomNav = ({
                   "w-6 h-6 transition-transform duration-200",
                   isActive && "scale-110"
                 )} />
-                
-                {/* Notification Badge */}
-                {item.id === "notifications" && notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center">
-                    {notificationCount > 9 ? "9+" : notificationCount}
-                  </span>
-                )}
               </div>
               
               <span className={cn(
