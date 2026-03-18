@@ -208,6 +208,7 @@ useEffect(() => {
       const isCurrent = item.esUsuarioActual || (user?.id && item.idUsuario === user.id);
       const prev = item.rankingAnterior ?? (item.posicionActual + item.tendencia);
       return {
+        id: item.idUsuario,
         position: item.posicionActual,
         name: item.nombreCompleto,
         exp: item.expTotal,

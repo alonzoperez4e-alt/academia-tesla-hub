@@ -6,6 +6,7 @@ import Temporizador from "@/components/Temporizador";
 import type { RankingItemDTO } from "@/types/api.types";
 
 interface RankingEntry {
+  id?: number;
   position: number;
   name: string;
   avatar?: string;
@@ -317,7 +318,7 @@ export const RankingTab = ({
       <div className="bg-card rounded-3xl border border-border overflow-hidden">
         {rest.map((entry, index) => (
           <div
-            key={entry.position}
+            key={entry.id ?? `${entry.position}-${entry.name}`}
             className={cn(
               "flex items-center gap-4 p-4 transition-all",
               entry.isCurrentUser && "bg-primary/10 border-l-4 border-primary",
