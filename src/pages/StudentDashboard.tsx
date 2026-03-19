@@ -7,7 +7,7 @@ import { GamifiedStatusBar } from "@/components/gamification/GamifiedStatusBar";
 import { LearningPath } from "@/components/gamification/LearningPath";
 import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
-import GroupInteraction from "@/components/student/GroupInteraction";
+import { GroupInteraction } from "../components/student/GroupInteraction";
 import StudentDinoGif from "@/components/student/StudentDinoGif";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import { QuizModal } from "@/components/student/QuizModal";
