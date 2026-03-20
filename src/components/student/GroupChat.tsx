@@ -268,12 +268,9 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
     <div key={`chat-${groupId}`}>
       <Card className="border-primary/20">
         <CardHeader className="space-y-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Wifi className={`w-4 h-4 ${connected ? 'text-primary' : 'text-muted-foreground'}`} />
-            Chat del grupo
-          </CardTitle>
+          <CardTitle className="text-lg">Chat del grupo</CardTitle>
           <CardDescription>
-            {`Solo para ${groupName}. Los mensajes se conservan 7 días.`}
+            Los mensajes se eliminan a la hora de haber enviado
           </CardDescription>
         </CardHeader>
 
@@ -351,7 +348,6 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
                 Enviar
               </Button>
             </div>
-            <p className="text-[12px] text-muted-foreground">Al cerrar esta vista se desconectará el chat automáticamente.</p>
           </div>
         </CardContent>
       </Card>

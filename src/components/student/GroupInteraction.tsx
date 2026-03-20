@@ -262,10 +262,7 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
 
       <Card className="border-primary/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Trophy className="w-5 h-5 text-primary" />
-            Ranking del grupo
-          </CardTitle>
+          <CardTitle className="text-lg">Ranking del grupo</CardTitle>
           <CardDescription>Solo para miembros de este grupo. No afecta tu exp global.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -273,12 +270,12 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
             <p className="text-sm text-muted-foreground">Aún no hay puntos registrados en este grupo.</p>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="w-full table-auto text-sm sm:text-base">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Estudiante</TableHead>
-                    <TableHead className="text-right">EXP Grupo</TableHead>
+                  <TableRow className="[&>*]:py-2 sm:[&>*]:py-3">
+                    <TableHead className="w-10 sm:w-14">N</TableHead>
+                    <TableHead className="min-w-[160px] sm:min-w-[220px]">Estudiante</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">EXP</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -286,14 +283,16 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
                     const displayName = entry.studentName || `Estudiante ${entry.studentId}`;
                     const isCurrentUser = entry.studentId === studentId || displayName === currentUserName;
                     return (
-                      <TableRow key={`${entry.studentId}-${entry.position}`} className={isCurrentUser ? 'bg-primary/5' : ''}>
+                      <TableRow key={`${entry.studentId}-${entry.position}`} className={`${isCurrentUser ? 'bg-primary/5' : ''} [&>*]:py-2 sm:[&>*]:py-3`}>
                         <TableCell className="font-semibold">{entry.position}</TableCell>
                         <TableCell className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium break-words">{displayName}</span>
-                          {isCurrentUser && <Badge variant="secondary">Tú</Badge>}
+                          <Users className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-xs sm:text-sm leading-tight break-words">
+                            {displayName}
+                          </span>
+                          {isCurrentUser && <Badge variant="secondary" className="shrink-0">Tú</Badge>}
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-foreground">{entry.groupExp}</TableCell>
+                        <TableCell className="text-right font-semibold text-foreground whitespace-nowrap">{entry.groupExp}</TableCell>
                       </TableRow>
                     );
                   })}
