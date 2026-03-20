@@ -319,25 +319,25 @@ export const RankingTab = ({
       </motion.div>
 
       {/* Rest of Rankings */}
-      <div className="bg-card rounded-3xl border border-border overflow-hidden">
+      <div className="bg-card rounded-3xl border border-border overflow-hidden w-full sm:max-w-2xl mx-auto">
         {rest.map((entry, index) => (
           <div
             key={entry.id ?? `${entry.position}-${entry.name}`}
             className={cn(
-              "flex items-center gap-4 p-4 transition-all",
+              "flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-2 sm:p-3 transition-all",
               entry.isCurrentUser && "bg-primary/10 border-l-4 border-primary",
               index < rest.length - 1 && "border-b border-border"
             )}
           >
-            <span className="w-8 text-center font-bold text-muted-foreground">
+            <span className="w-2 text-center font-bold text-muted-foreground">
               {entry.position}
             </span>
             
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-tesla-blue-light flex items-center justify-center text-white font-bold shadow-md">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-primary to-tesla-blue-light flex items-center justify-center text-white font-bold shadow-md">
               {entry.name.charAt(0)}
             </div>
             
-            <div className="flex-1">
+            <div className="flex-1 min-w-[150px] sm:min-w-[210px] pr-2 sm:pr-4">
               <p className={cn(
                 "font-semibold",
                 entry.isCurrentUser && "text-primary"
@@ -347,7 +347,7 @@ export const RankingTab = ({
               </p>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 font-bold text-foreground text-sm sm:text-base flex-shrink-0">
               <div className="flex items-center gap-1 font-bold text-foreground">
                 <Gem className="w-4 h-4 text-primary" />
                 <span>{entry.exp} EXP</span>
