@@ -9,6 +9,7 @@ import { Loader2, Trophy, Users, LogOut } from 'lucide-react';
 import { groupService } from '@/services/groupService';
 import type { GroupInfo, GroupRankingEntry } from '@/types/api.types';
 import { useToast } from '@/hooks/use-toast';
+import { GroupChat } from './GroupChat';
 
 interface GroupInteractionProps {
   studentId: number;
@@ -32,8 +33,9 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
   const [createName, setCreateName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [autoRefreshTick, setAutoRefreshTick] = useState(0);
+  const [chatResetSignal, setChatResetSignal] = useState(0);
 
-  const currentUserName = useMemo(() => studentName ?? 'Tú', [studentName]);
+  const currentUserName = useMemo(() => (studentName && studentName.trim() ? studentName.trim() : 'Tú'), [studentName]);
 
   const handleLoadStatus = async () => {
     setLoading(true);
@@ -112,10 +114,12 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
     try {
       const message = await groupService.leaveGroup(group.id, studentId);
       toast({ title: 'Saliste del grupo', description: message });
+      setChatResetSignal((n) => n + 1);
       setGroup(null);
       setRanking([]);
       setJoinCode('');
       setCreateName('');
+      setAutoRefreshTick(0);
     } catch (error) {
       toast({ title: 'No se pudo salir del grupo', description: formatError(error), variant: 'destructive' });
     } finally {
@@ -296,6 +300,14 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
           )}
         </CardContent>
       </Card>
+
+      <GroupChat
+        groupId={group.id}
+        groupName={group.name}
+        studentId={studentId}
+        studentName={currentUserName}
+        resetSignal={chatResetSignal}
+      />
       </div>
     );
   };

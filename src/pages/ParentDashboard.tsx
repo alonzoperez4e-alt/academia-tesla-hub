@@ -261,7 +261,7 @@ const ParentDashboard = () => {
                   <CheckCircle2 className="w-8 h-8 text-success" />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-success">Presente</p>
+                  <p className="text-xl font-bold text-success">Presente </p>
                   <p className="text-sm text-muted-foreground">Asistió a clases</p>
                 </div>
               </>
