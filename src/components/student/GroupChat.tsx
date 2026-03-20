@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { Loader2, Send, Wifi, WifiOff } from 'lucide-react';
@@ -54,6 +55,7 @@ const normalizeId = (id: string | number | undefined | null) => (id === undefine
 
 export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSignal }: GroupChatProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<GroupChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -74,7 +76,18 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
   };
 
   const orderedMessages = useMemo(() => {
-    return [...messages].sort((a, b) => getTimestampMs(a) - getTimestampMs(b));
+    const seen = new Set<string>();
+    const deduped: GroupChatMessage[] = [];
+
+    for (const msg of messages) {
+      const id = normalizeId(msg.id);
+      if (!id) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      deduped.push(msg);
+    }
+
+    return deduped.sort((a, b) => getTimestampMs(a) - getTimestampMs(b));
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -93,9 +106,16 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
       try {
         const history = await groupService.getChatHistory(groupId);
         if (isActive) setMessages((history ?? []).map(withStableId));
-      } catch (error) {
-        if (isActive) {
-          toast({ title: 'No se pudo cargar el chat', description: 'Intenta recargar la página.', variant: 'destructive' });
+      } catch (error: any) {
+        if (!isActive) return;
+        const status = error?.response?.status as number | undefined;
+        const message = error?.response?.data as any;
+        const notFound = status === 404 || (typeof message === 'string' && /no encontrado/i.test(message));
+        toast({ title: 'No se pudo cargar el chat', description: 'El grupo podría haber sido eliminado.', variant: 'destructive' });
+        if (notFound) {
+          setMessages([]);
+          navigate('/dashboard');
+          return;
         }
       } finally {
         if (isActive) setHistoryLoading(false);
@@ -136,6 +156,13 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
             } catch (error) {
               console.error('No se pudo parsear el mensaje de chat', error);
             }
+          });
+
+          // Suscripción a evento de eliminación del grupo
+          client.subscribe(`/topic/group/${groupId}/deleted`, () => {
+            toast({ title: 'Este grupo ha sido eliminado', description: 'Serás redirigido al dashboard.', variant: 'destructive' });
+            setMessages([]);
+            navigate('/dashboard');
           });
         },
         onStompError: () => {
@@ -283,23 +310,25 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
                 Aún no hay mensajes. ¡Envía el primero!
               </div>
             ) : (
-              orderedMessages.map((message, index) => {
-                const isMine = message.studentId === studentId;
-                const time = getDisplayTime(message);
-                const keyValue = normalizeId(message.id) ?? `fallback-${index}`;
+              orderedMessages
+                .filter((message) => !!normalizeId(message.id))
+                .map((message) => {
+                  const stableId = normalizeId(message.id)!;
+                  const isMine = message.studentId === studentId;
+                  const time = getDisplayTime(message);
 
-                return (
-                  <div key={keyValue} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-xl px-3 py-2 shadow-sm ${isMine ? 'bg-primary text-primary-foreground' : 'bg-white text-foreground border border-border'}`}>
-                      <div className="text-xs font-semibold opacity-80">
-                        {isMine ? 'Tú' : message.studentName || `Estudiante ${message.studentId ?? 'N/A'}`}
+                  return (
+                    <div key={stableId} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-xl px-3 py-2 shadow-sm ${isMine ? 'bg-primary text-primary-foreground' : 'bg-white text-foreground border border-border'}`}>
+                        <div className="text-xs font-semibold opacity-80">
+                          {isMine ? 'Tú' : message.studentName || `Estudiante ${message.studentId ?? 'N/A'}`}
+                        </div>
+                        <div className="text-sm whitespace-pre-wrap break-words">{message.content}</div>
+                        {time ? <div className="text-[11px] opacity-70 mt-1 text-right flex items-center gap-1 justify-end">{time}</div> : null}
                       </div>
-                      <div className="text-sm whitespace-pre-wrap break-words">{message.content}</div>
-                      {time ? <div className="text-[11px] opacity-70 mt-1 text-right flex items-center gap-1 justify-end">{time}</div> : null}
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
             )}
             <div ref={listEndRef} />
           </div>

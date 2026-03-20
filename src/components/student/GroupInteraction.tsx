@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Loader2, Trophy, Users, LogOut } from 'lucide-react';
 import { groupService } from '@/services/groupService';
 import type { GroupInfo, GroupRankingEntry } from '@/types/api.types';
 import { useToast } from '@/hooks/use-toast';
-import { GroupChat } from './GroupChat';
+import { GroupChat } from './GroupChat.tsx';
 
 interface GroupInteractionProps {
   studentId: number;
@@ -26,6 +27,7 @@ const stripDiacritics = (value: string) => value.normalize('NFD').replace(/\p{Di
 
 export const GroupInteraction = ({ studentId, studentName }: GroupInteractionProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState<GroupInfo | null>(null);
   const [ranking, setRanking] = useState<GroupRankingEntry[]>([]);
@@ -120,6 +122,7 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
       setJoinCode('');
       setCreateName('');
       setAutoRefreshTick(0);
+      navigate('/dashboard');
     } catch (error) {
       toast({ title: 'No se pudo salir del grupo', description: formatError(error), variant: 'destructive' });
     } finally {
