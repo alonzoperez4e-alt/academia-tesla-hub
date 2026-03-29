@@ -1,4 +1,4 @@
-import { Crown, Medal, Trophy, TrendingUp, TrendingDown, Minus, Gem, Sparkles, Star } from "lucide-react";
+import { Crown, Medal, TrendingUp, TrendingDown, Minus, Star, Gem } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import RankingSemanal from "@/components/RankingSemanal";
@@ -6,6 +6,7 @@ import Temporizador from "@/components/Temporizador";
 import type { RankingItemDTO } from "@/types/api.types";
 
 interface RankingEntry {
+  id?: number;
   position: number;
   name: string;
   avatar?: string;
@@ -29,12 +30,13 @@ interface RankingTabProps {
 export const RankingTab = ({ 
   rankings, 
   userPosition, 
-  userPreviousPosition,
+  userPreviousPosition: _userPreviousPosition,
   totalStudents,
   rawRankingData,
   currentUser,
   userId
 }: RankingTabProps) => {
+  void _userPreviousPosition;
   const usuarioActual = (rawRankingData ?? []).find((alumno) => alumno.esUsuarioActual)
     ?? (rawRankingData ?? []).find((alumno) => userId && alumno.idUsuario === userId)
     ?? currentUser
@@ -61,15 +63,16 @@ export const RankingTab = ({
     if (derived > 0) currentPos = derived;
   }
 
-  const previousPos = usuarioActual?.rankingAnterior
-    ?? fallbackRanking?.previousPosition
-    ?? userPreviousPosition
-    ?? 0;
-
   const currentDisplay = Number.isFinite(currentPos) && currentPos > 0 ? currentPos : "-";
-  const previousDisplay = Number.isFinite(previousPos) && previousPos > 0 ? previousPos : "-";
   const top3 = rankings.slice(0, 3);
   const rest = rankings.slice(3);
+
+  const totalPlayers = totalStudents || rankings.length || rawRankingData?.length || 0;
+  const currentExp = usuarioActual?.expParaRanking
+    ?? usuarioActual?.expTotal
+    ?? fallbackRanking?.expForRanking
+    ?? fallbackRanking?.exp
+    ?? null;
 
   const getTrophyColor = (position: number) => {
     switch (position) {
@@ -101,34 +104,36 @@ export const RankingTab = ({
         transition={{ duration: 0.5 }}
         className="text-center mb-6"
       >
-        {/* WIDGET: TU LUGAR EN EL RANKING */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
-          {/* Título Superior */}
-          <div className="flex items-center gap-2 text-slate-500 font-medium mb-4">
-            <span>🎯</span>
-            <span>Tu lugar en el ranking</span>
-          </div>
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          className="relative overflow-hidden w-full max-w-lg sm:max-w-xl mx-auto bg-white text-slate-900 p-5 sm:p-7 rounded-3xl shadow-lg border border-primary/20"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-tesla-blue-light/5 to-transparent" />
 
-          <div className="flex items-center gap-6">
-            {/* 1. TOP ACTUAL (EL NÚMERO GIGANTE basado en exp_semanal) */}
-            <div className="flex flex-col items-center">
-              <h2 className="text-6xl font-black text-blue-950 drop-shadow-sm">
-                #{currentDisplay}
-              </h2>
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-8 text-center sm:text-left">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">Tu lugar en el ranking</p>
+              <div className="flex items-end gap-3 justify-center sm:justify-start pl-3 sm:pl-20">
+                <motion.span
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="text-4xl sm:text-6xl font-black leading-none drop-shadow-sm text-slate-900"
+                >
+                  {currentDisplay}
+                </motion.span>
+              </div>
             </div>
 
-            <div className="flex items-start gap-4">
-              <div className="flex flex-col">
-                <span className="font-bold text-blue-600 text-lg">
-                  ¡Sigue así! 💪
-                </span>
-                <span className="text-sm text-slate-500 font-medium mt-1">
-                  La semana pasada: <span className="text-slate-800 font-bold text-base">#{previousDisplay}</span>
-                </span>
+            <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 w-full sm:w-[260px]">
+              <div className="relative overflow-hidden rounded-2xl bg-white border border-primary/15 p-3 flex flex-col items-center justify-center text-center shadow-sm">
+                <p className="text-[11px] uppercase tracking-wide text-primary">Exp acumulada</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{currentExp !== null ? `${currentExp} EXP` : "En cálculo"}</p>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* Top 3 Podium - Rediseñado completamente */}
@@ -314,25 +319,25 @@ export const RankingTab = ({
       </motion.div>
 
       {/* Rest of Rankings */}
-      <div className="bg-card rounded-3xl border border-border overflow-hidden">
+      <div className="bg-card rounded-3xl border border-border overflow-hidden w-full sm:max-w-2xl mx-auto">
         {rest.map((entry, index) => (
           <div
-            key={entry.position}
+            key={entry.id ?? `${entry.position}-${entry.name}`}
             className={cn(
-              "flex items-center gap-4 p-4 transition-all",
+              "flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-2 sm:p-3 transition-all",
               entry.isCurrentUser && "bg-primary/10 border-l-4 border-primary",
               index < rest.length - 1 && "border-b border-border"
             )}
           >
-            <span className="w-8 text-center font-bold text-muted-foreground">
+            <span className="w-2 text-center font-bold text-muted-foreground">
               {entry.position}
             </span>
             
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-tesla-blue-light flex items-center justify-center text-white font-bold shadow-md">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-primary to-tesla-blue-light flex items-center justify-center text-white font-bold shadow-md">
               {entry.name.charAt(0)}
             </div>
             
-            <div className="flex-1">
+            <div className="flex-1 min-w-[150px] sm:min-w-[210px] pr-2 sm:pr-4">
               <p className={cn(
                 "font-semibold",
                 entry.isCurrentUser && "text-primary"
@@ -342,8 +347,7 @@ export const RankingTab = ({
               </p>
             </div>
             
-            <div className="flex items-center gap-3">
-              {getTrendIcon(entry.trend)}
+            <div className="flex items-center gap-2 sm:gap-3 font-bold text-foreground text-sm sm:text-base flex-shrink-0">
               <div className="flex items-center gap-1 font-bold text-foreground">
                 <Gem className="w-4 h-4 text-primary" />
                 <span>{entry.exp} EXP</span>

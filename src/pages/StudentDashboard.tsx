@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Construction, Loader2 } from "lucide-react";
 
 // Componentes UI
@@ -7,6 +7,7 @@ import { GamifiedStatusBar } from "@/components/gamification/GamifiedStatusBar";
 import { LearningPath } from "@/components/gamification/LearningPath";
 import { RankingTab } from "@/components/gamification/RankingTab";
 import { MobileBottomNav } from "@/components/gamification/MobileBottomNav";
+import { GroupInteraction } from "../components/student/GroupInteraction";
 import StudentDinoGif from "@/components/student/StudentDinoGif";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import { QuizModal } from "@/components/student/QuizModal";
@@ -14,10 +15,11 @@ import { QuizModal } from "@/components/student/QuizModal";
 // Hook
 import { useStudentDashboard } from "@/hooks/studentDashboard/useStudentDashboard";
 
-const studentTabs = ["path", "ranking", "profile", "notifications"] as const;
+const studentTabs = ["path", "ranking", "interaction", "profile"] as const;
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialTabParam = searchParams.get("tab");
@@ -28,6 +30,8 @@ const StudentDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<typeof studentTabs[number]>(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
+  const [resumeLesson, setResumeLesson] = useState<any | null>(null);
+  const didCheckRef = useRef(false);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -36,6 +40,10 @@ const StudentDashboard = () => {
   }, [navigate]);
 
   const { state, actions } = useStudentDashboard(user, activeTab);
+  const isQuizOpenRef = useRef(false);
+  useEffect(() => {
+    isQuizOpenRef.current = state.isQuizOpen;
+  }, [state.isQuizOpen]);
 
   // Persist tab in URL without causing toggle loops; also keep URL in sync when user switches tab.
   useEffect(() => {
@@ -60,6 +68,95 @@ const StudentDashboard = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [activeTab]);
+
+  // Mostrar modal solo cuando hay sesión activa en storage y SOLO en Camino
+  useEffect(() => {
+    const isLessonPath = (pathname: string) => /\/(leccion|evaluacion)/i.test(pathname);
+    const isCaminoRoute = (pathname: string) => pathname.startsWith("/dashboard") && activeTab === "path";
+
+    const shouldShowResumeModal = (pathname: string) => {
+      if (!isCaminoRoute(pathname)) return false;
+      const active = localStorage.getItem("lesson_active") === "1";
+      const finished = localStorage.getItem("lesson_finished") === "1";
+      const attemptId = localStorage.getItem("lesson_attemptId");
+      const endTs = Number(localStorage.getItem("lesson_endTs") || 0);
+      const inProgress = localStorage.getItem("lesson_progress") === "1";
+      const consumed = localStorage.getItem("resume_prompt_consumed") === "1";
+
+      if (finished) return false;
+      if (!active || !attemptId || !inProgress) return false;
+      if (endTs <= Date.now()) return false;
+      if (consumed) return false;
+      return true;
+    };
+
+    const checkResume = () => {
+      const pathname = window.location.pathname;
+      if (isLessonPath(pathname)) {
+        setResumeLesson(null);
+        localStorage.setItem("resume_prompt_open", "0");
+        return;
+      }
+      if (!shouldShowResumeModal(pathname)) {
+        setResumeLesson(null);
+        return;
+      }
+      if (isQuizOpenRef.current) return;
+
+      const raw = localStorage.getItem("lesson_session");
+      const endTs = Number(localStorage.getItem("lesson_endTs") || 0);
+      const lessonId = localStorage.getItem("lesson_lessonId");
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          setResumeLesson(parsed);
+          localStorage.setItem("resume_prompt_open", "1");
+          return;
+        } catch (_) {
+          /* ignore */
+        }
+      }
+      if (endTs > 0 && lessonId) {
+        setResumeLesson({ lesson_endTs: endTs, lessonId });
+        localStorage.setItem("resume_prompt_open", "1");
+      }
+    };
+
+    if (isCaminoRoute(window.location.pathname)) {
+      localStorage.setItem("resume_prompt_consumed", "0");
+    } else {
+      setResumeLesson(null);
+    }
+
+    checkResume();
+
+    if (didCheckRef.current) return; // evita doble registro en StrictMode
+    didCheckRef.current = true;
+
+    const onPageShow = () => checkResume();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") checkResume();
+    };
+    const onFocus = () => checkResume();
+
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [state.isQuizOpen, location.pathname, activeTab]);
+
+  const isLessonRoute = /\/(leccion|evaluacion)/i.test(location.pathname);
+  useEffect(() => {
+    if (isLessonRoute) {
+      setResumeLesson(null);
+      localStorage.setItem("resume_prompt_open", "0");
+    }
+  }, [isLessonRoute]);
 
   if (!user) return null;
 
@@ -142,6 +239,13 @@ const StudentDashboard = () => {
           </div>
         );
 
+      case "interaction":
+        return (
+          <div className="pb-24 lg:pb-8 px-4 mt-4 max-w-5xl mx-auto">
+            <GroupInteraction studentId={user.id} studentName={user.name} />
+          </div>
+        );
+
       case "profile":
         return (
           <div className="pb-24 lg:pb-8 px-4 mt-4">
@@ -161,13 +265,65 @@ const StudentDashboard = () => {
           </div>
         );
 
-      case "notifications":
-        return <BlockedScreen title="Próximamente" text="Esta sección estará disponible en las siguientes actualizaciones." />;
     }
   };
 
   return (
     <div className="min-h-screen bg-secondary bg-[#F3F4F6]">
+      {resumeLesson && !isLessonRoute && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md text-center space-y-4">
+            <h3 className="text-2xl font-bold text-gray-900">Sesión en curso</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Detectamos que se recargó la página. ¿Deseas continuar donde te quedaste o finalizar ahora?
+            </p>
+            <div className="timeBadge">
+              El tiempo sigue corriendo: {
+                (() => {
+                  const remaining = Math.max(0, Math.floor((resumeLesson.lesson_endTs - Date.now()) / 1000));
+                  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+                  const ss = String(remaining % 60).padStart(2, "0");
+                  return `${mm}:${ss}`;
+                })()
+              }
+            </div>
+            <div className="modalActions">
+              <button
+                className="btn btnPrimary"
+                onClick={() => {
+                  localStorage.setItem("resume_prompt_consumed", "1");
+                  localStorage.setItem("resume_prompt_open", "0");
+                  sessionStorage.setItem("lesson_skip_resume", String(resumeLesson.lessonId));
+                  actions.openQuiz(String(resumeLesson.lessonId));
+                  setResumeLesson(null);
+                }}
+              >
+                Continuar
+              </button>
+              <button
+                className="btn btnDanger"
+                onClick={() => {
+                  localStorage.setItem("resume_prompt_consumed", "1");
+                  localStorage.removeItem("lesson_session");
+                  localStorage.removeItem("lesson_active");
+                  localStorage.removeItem("lesson_attemptId");
+                  localStorage.removeItem("lesson_endTs");
+                  localStorage.removeItem("lesson_finished");
+                  localStorage.removeItem("lesson_progress");
+                  localStorage.removeItem("lesson_lessonId");
+                  localStorage.setItem("resume_prompt_open", "0");
+                  sessionStorage.setItem("lesson_force_submit", String(resumeLesson.lessonId));
+                  actions.openQuiz(String(resumeLesson.lessonId));
+                  setResumeLesson(null);
+                }}
+              >
+                Terminar y enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <GamifiedStatusBar
         userName={user.name}
         userCode={user.code}
@@ -186,7 +342,7 @@ const StudentDashboard = () => {
       />
 
       <div className="hidden lg:flex items-center justify-center gap-2 py-4 bg-card/95 backdrop-blur-sm border-b border-border fixed top-[88px] left-0 right-0 z-40 shadow-sm">
-        {(["path", "ranking", "profile"] as const).map((tab) => (
+        {(["path", "ranking", "interaction", "profile"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -194,7 +350,13 @@ const StudentDashboard = () => {
               activeTab === tab ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            {tab === "path" ? "El Camino" : tab === "ranking" ? "Ranking" : "Mi Perfil"}
+            {tab === "path"
+              ? "El Camino"
+              : tab === "ranking"
+                ? "Ranking"
+                : tab === "interaction"
+                  ? "Interacción"
+                  : "Mi Perfil"}
           </button>
         ))}
       </div>
@@ -203,18 +365,79 @@ const StudentDashboard = () => {
         {renderContent()}
       </main>
 
-      <MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab as any} notificationCount={3} />
+      <MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
       {state.currentQuiz && (
         <QuizModal
           isOpen={state.isQuizOpen}
           onClose={actions.closeQuiz}
           lessonTitle={state.currentQuiz.title}
+            lessonId={state.currentQuiz.idLeccion}
           questions={state.currentQuiz.questions}
           onComplete={actions.submitQuizAnswers}
           timePerQuestion={180}
+            userId={user.id}
         />
       )}
+      <style>{`
+        .modalActions{
+          display:flex;
+          gap:12px;
+          justify-content:center;
+          margin-top:14px;
+          flex-wrap:wrap;
+        }
+        .btn{
+          border-radius:12px;
+          padding:12px 18px;
+          font-weight:600;
+          font-size:14px;
+          min-width:160px;
+          border:1px solid transparent;
+          cursor:pointer;
+          transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+          will-change: transform;
+        }
+        .btn:hover{
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+        }
+        .btn:active{
+          transform: translateY(0px) scale(0.99);
+          box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+        }
+        .btnPrimary{
+          background:#0F3D66;
+          color:#fff;
+        }
+        .btnPrimary:hover{
+          background:#0D355A;
+        }
+        .btnDanger{
+          background:#F3F4F6;
+          color:#1F2937;
+          border-color:#E5E7EB;
+        }
+        .btnDanger:hover{
+          background:#EDEFF2;
+          border-color:#D1D5DB;
+        }
+        .timeBadge{
+          display:inline-block;
+          margin-top:10px;
+          padding:8px 12px;
+          border-radius:999px;
+          background:#FEF2F2;
+          color:#B91C1C;
+          font-weight:600;
+          font-size:13px;
+          border:1px solid #FECACA;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .btn{ transition:none; }
+          .btn:hover{ transform:none; box-shadow:none; }
+        }
+      `}</style>
     </div>
   );
 };

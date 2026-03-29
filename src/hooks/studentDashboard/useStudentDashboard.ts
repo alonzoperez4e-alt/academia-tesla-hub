@@ -38,8 +38,17 @@ export const useStudentDashboard = (user: any, activeTab: string) => {
       try {
         const resumenes = await estudianteService.obtenerCursos();
         setCursos(resumenes);
-        const primerHabilitado = resumenes.find((c) => c.isHabilitado);
-        if (primerHabilitado) setSelectedCursoId(primerHabilitado.idCurso);
+
+        const stored = localStorage.getItem("student_selected_course");
+        const storedId = stored ? parseInt(stored, 10) : null;
+        const existsStored = storedId && resumenes.some((c) => c.idCurso === storedId && c.isHabilitado);
+
+        if (existsStored) {
+          setSelectedCursoId(storedId!);
+        } else {
+          const primerHabilitado = resumenes.find((c) => c.isHabilitado);
+          if (primerHabilitado) setSelectedCursoId(primerHabilitado.idCurso);
+        }
       } catch (error) {
         toast({ title: "Error", description: "No se pudieron cargar los cursos.", variant: "destructive" });
       } finally {
@@ -173,6 +182,13 @@ useEffect(() => {
     }
   }, [currentQuiz, user, selectedCursoId, rankingData]);
 
+  // Persistir selección de curso
+  useEffect(() => {
+    if (selectedCursoId) {
+      localStorage.setItem("student_selected_course", String(selectedCursoId));
+    }
+  }, [selectedCursoId]);
+
   // 4. Datos Derivados (Memoizados)
   const camino = selectedCursoId ? caminoPorCurso[selectedCursoId] ?? null : null;
   const weekSections = useMemo(() => camino ? mapSemanasToWeeks(camino.semanas) : [], [camino]);
@@ -192,6 +208,7 @@ useEffect(() => {
       const isCurrent = item.esUsuarioActual || (user?.id && item.idUsuario === user.id);
       const prev = item.rankingAnterior ?? (item.posicionActual + item.tendencia);
       return {
+        id: item.idUsuario,
         position: item.posicionActual,
         name: item.nombreCompleto,
         exp: item.expTotal,
