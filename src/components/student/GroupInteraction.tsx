@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Loader2, Trophy, Users, LogOut } from 'lucide-react';
 import { groupService } from '@/services/groupService';
 import type { GroupInfo, GroupRankingEntry } from '@/types/api.types';
 import { useToast } from '@/hooks/use-toast';
+import { GroupChat } from './GroupChat.tsx';
 
 interface GroupInteractionProps {
   studentId: number;
@@ -25,6 +27,7 @@ const stripDiacritics = (value: string) => value.normalize('NFD').replace(/\p{Di
 
 export const GroupInteraction = ({ studentId, studentName }: GroupInteractionProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState<GroupInfo | null>(null);
   const [ranking, setRanking] = useState<GroupRankingEntry[]>([]);
@@ -32,8 +35,9 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
   const [createName, setCreateName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [autoRefreshTick, setAutoRefreshTick] = useState(0);
+  const [chatResetSignal, setChatResetSignal] = useState(0);
 
-  const currentUserName = useMemo(() => studentName ?? 'Tú', [studentName]);
+  const currentUserName = useMemo(() => (studentName && studentName.trim() ? studentName.trim() : 'Tú'), [studentName]);
 
   const handleLoadStatus = async () => {
     setLoading(true);
@@ -112,10 +116,13 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
     try {
       const message = await groupService.leaveGroup(group.id, studentId);
       toast({ title: 'Saliste del grupo', description: message });
+      setChatResetSignal((n) => n + 1);
       setGroup(null);
       setRanking([]);
       setJoinCode('');
       setCreateName('');
+      setAutoRefreshTick(0);
+      navigate('/dashboard');
     } catch (error) {
       toast({ title: 'No se pudo salir del grupo', description: formatError(error), variant: 'destructive' });
     } finally {
@@ -255,10 +262,7 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
 
       <Card className="border-primary/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Trophy className="w-5 h-5 text-primary" />
-            Ranking del grupo
-          </CardTitle>
+          <CardTitle className="text-lg">Ranking del grupo</CardTitle>
           <CardDescription>Solo para miembros de este grupo. No afecta tu exp global.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -266,12 +270,12 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
             <p className="text-sm text-muted-foreground">Aún no hay puntos registrados en este grupo.</p>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="w-full table-auto text-sm sm:text-base">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Estudiante</TableHead>
-                    <TableHead className="text-right">EXP Grupo</TableHead>
+                  <TableRow className="[&>*]:py-2 sm:[&>*]:py-3">
+                    <TableHead className="w-10 sm:w-14">N</TableHead>
+                    <TableHead className="min-w-[160px] sm:min-w-[220px]">Estudiante</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">EXP</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -279,14 +283,16 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
                     const displayName = entry.studentName || `Estudiante ${entry.studentId}`;
                     const isCurrentUser = entry.studentId === studentId || displayName === currentUserName;
                     return (
-                      <TableRow key={`${entry.studentId}-${entry.position}`} className={isCurrentUser ? 'bg-primary/5' : ''}>
+                      <TableRow key={`${entry.studentId}-${entry.position}`} className={`${isCurrentUser ? 'bg-primary/5' : ''} [&>*]:py-2 sm:[&>*]:py-3`}>
                         <TableCell className="font-semibold">{entry.position}</TableCell>
                         <TableCell className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium break-words">{displayName}</span>
-                          {isCurrentUser && <Badge variant="secondary">Tú</Badge>}
+                          <Users className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-xs sm:text-sm leading-tight break-words">
+                            {displayName}
+                          </span>
+                          {isCurrentUser && <Badge variant="secondary" className="shrink-0">Tú</Badge>}
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-foreground">{entry.groupExp}</TableCell>
+                        <TableCell className="text-right font-semibold text-foreground whitespace-nowrap">{entry.groupExp}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -296,6 +302,14 @@ export const GroupInteraction = ({ studentId, studentName }: GroupInteractionPro
           )}
         </CardContent>
       </Card>
+
+      <GroupChat
+        groupId={group.id}
+        groupName={group.name}
+        studentId={studentId}
+        studentName={currentUserName}
+        resetSignal={chatResetSignal}
+      />
       </div>
     );
   };

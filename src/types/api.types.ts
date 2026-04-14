@@ -274,3 +274,15 @@ export interface GroupRankingEntry {
   studentName: string;
   groupExp: number;
 }
+
+export interface GroupChatMessage {
+  id?: number | string;
+  studentId: number;
+  studentName: string;
+  content: string;
+  createdAt?: string;
+  timestamp?: string | number;
+  updatedAt?: string;
+  isEdited?: boolean;
+  isDeleted?: boolean;
+}

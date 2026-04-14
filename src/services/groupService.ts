@@ -1,6 +1,6 @@
 import type { AxiosError } from 'axios';
 import { api } from './api';
-import type { GroupInfo, GroupRankingEntry } from '@/types/api.types';
+import type { GroupChatMessage, GroupInfo, GroupRankingEntry } from '@/types/api.types';
 
 // api baseURL ya incluye /api/v1; mantener solo el segmento de recurso para evitar duplicar la ruta
 const GROUPS_BASE = '/groups';
@@ -53,6 +53,11 @@ export const groupService = {
 
   async getRanking(groupId: number): Promise<GroupRankingEntry[]> {
     const response = await api.get<GroupRankingEntry[]>(`${GROUPS_BASE}/${groupId}/ranking`);
+    return response.data ?? [];
+  },
+
+  async getChatHistory(groupId: number): Promise<GroupChatMessage[]> {
+    const response = await api.get<GroupChatMessage[]>(`${GROUPS_BASE}/${groupId}/chat/history`);
     return response.data ?? [];
   },
 };

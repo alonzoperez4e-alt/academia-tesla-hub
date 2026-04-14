@@ -141,15 +141,8 @@ export const RankingTab = ({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5, duration: 0.6 }}
-        className="mb-10"
+        className="mb-10 mt-10 sm:mt-14"
       >
-        {/* Título con más espacio vertical */}
-        <h3 className="text-center text-xl sm:text-2xl font-bold text-foreground mb-8 sm:mb-10 flex items-center justify-center gap-2">
-          <Star className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500 fill-yellow-500" />
-          Los 3 Mejores
-          <Star className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500 fill-yellow-500" />
-        </h3>
-        
         <div className="flex items-end justify-center gap-4 sm:gap-6 md:gap-8 px-2">
           {/* 2nd Place - Plata */}
           {top3[1] && (
