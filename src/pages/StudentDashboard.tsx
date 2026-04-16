@@ -56,6 +56,11 @@ const getUnreadMessageCount = (messages: GroupChatMessage[], lastSeenTimestamp: 
   return messages.reduce((count, message) => count + (getMessageTimestampMs(message) > lastSeenTimestamp ? 1 : 0), 0);
 };
 
+const getMessageKey = (message: GroupChatMessage) => {
+  if (message.id !== undefined && message.id !== null) return `id:${String(message.id)}`;
+  return `fallback:${message.studentId}:${getMessageTimestampMs(message)}:${message.content}`;
+};
+
 const formatUnreadCount = (count: number) => (count > 99 ? '99+' : String(count));
 
 const StudentDashboard = () => {
@@ -75,8 +80,10 @@ const StudentDashboard = () => {
   const [interactionUnreadCount, setInteractionUnreadCount] = useState(0);
   const didCheckRef = useRef(false);
   const interactionSocketRef = useRef<Client | null>(null);
+  const interactionGroupIdRef = useRef<number | null>(null);
   const interactionLastSeenRef = useRef(0);
   const interactionLatestTimestampRef = useRef(0);
+  const seenMessageKeysRef = useRef<Set<string>>(new Set());
   const activeTabRef = useRef(activeTab);
 
   const wsBaseUrl = useMemo(() => resolveWsBaseUrl(), []);
@@ -132,6 +139,7 @@ const StudentDashboard = () => {
     const cleanupSocket = () => {
       interactionSocketRef.current?.deactivate();
       interactionSocketRef.current = null;
+      interactionGroupIdRef.current = null;
     };
 
     const markAsRead = (latestTimestamp: number) => {
@@ -150,6 +158,7 @@ const StudentDashboard = () => {
         if (!studentGroup) {
           cleanupSocket();
           interactionLatestTimestampRef.current = 0;
+          seenMessageKeysRef.current.clear();
           setInteractionUnreadCount(0);
           return;
         }
@@ -160,6 +169,7 @@ const StudentDashboard = () => {
         const latestTimestamp = getLatestMessageTimestampMs(history ?? []);
         interactionLatestTimestampRef.current = latestTimestamp;
         const unreadCount = getUnreadMessageCount(history ?? [], interactionLastSeenRef.current);
+        seenMessageKeysRef.current = new Set((history ?? []).slice(-400).map(getMessageKey));
 
         if (activeTabRef.current === "interaction") {
           markAsRead(latestTimestamp);
@@ -169,46 +179,62 @@ const StudentDashboard = () => {
 
         if (!wsBaseUrl) return;
 
-        cleanupSocket();
-        const socket = new SockJS(`${wsBaseUrl}/ws-chat`);
-        const client = new Client({
-          webSocketFactory: () => socket as any,
-          reconnectDelay: 5000,
-          onConnect: () => {
-            if (cancelled) return;
-            client.subscribe(`/topic/group/${studentGroup.id}`, (frame) => {
-              try {
-                const incoming = JSON.parse(frame.body) as GroupChatMessage;
-                const incomingTimestamp = getMessageTimestampMs(incoming);
-                if (incomingTimestamp > interactionLatestTimestampRef.current) {
-                  interactionLatestTimestampRef.current = incomingTimestamp;
-                }
+        const shouldReconnectSocket =
+          interactionGroupIdRef.current !== studentGroup.id ||
+          !interactionSocketRef.current ||
+          !interactionSocketRef.current.connected;
 
-                if (activeTabRef.current === "interaction") {
-                  markAsRead(interactionLatestTimestampRef.current);
-                  return;
-                }
+        if (shouldReconnectSocket) {
+          cleanupSocket();
+          interactionGroupIdRef.current = studentGroup.id;
 
-                setInteractionUnreadCount((current) => Math.min(current + 1, 999));
-              } catch {
-                if (activeTabRef.current !== "interaction") {
+          const socket = new SockJS(`${wsBaseUrl}/ws-chat`);
+          const client = new Client({
+            webSocketFactory: () => socket as any,
+            reconnectDelay: 5000,
+            onConnect: () => {
+              if (cancelled) return;
+              client.subscribe(`/topic/group/${studentGroup.id}`, (frame) => {
+                try {
+                  const incoming = JSON.parse(frame.body) as GroupChatMessage;
+                  const messageKey = getMessageKey(incoming);
+                  if (seenMessageKeysRef.current.has(messageKey)) return;
+
+                  seenMessageKeysRef.current.add(messageKey);
+                  if (seenMessageKeysRef.current.size > 600) {
+                    const first = seenMessageKeysRef.current.values().next().value;
+                    if (first) seenMessageKeysRef.current.delete(first);
+                  }
+
+                  const incomingTimestamp = getMessageTimestampMs(incoming);
+                  if (incomingTimestamp > interactionLatestTimestampRef.current) {
+                    interactionLatestTimestampRef.current = incomingTimestamp;
+                  }
+
+                  if (activeTabRef.current === "interaction") {
+                    markAsRead(interactionLatestTimestampRef.current);
+                    return;
+                  }
+
                   setInteractionUnreadCount((current) => Math.min(current + 1, 999));
+                } catch {
+                  // Ignorar mensajes inválidos para evitar conteos inflados.
                 }
-              }
-            });
-          },
-          onWebSocketClose: () => {
-            if (cancelled) return;
-            interactionSocketRef.current = null;
-          },
-          onStompError: () => {
-            if (cancelled) return;
-            interactionSocketRef.current = null;
-          },
-        });
+              });
+            },
+            onWebSocketClose: () => {
+              if (cancelled) return;
+              interactionSocketRef.current = null;
+            },
+            onStompError: () => {
+              if (cancelled) return;
+              interactionSocketRef.current = null;
+            },
+          });
 
-        interactionSocketRef.current = client;
-        client.activate();
+          interactionSocketRef.current = client;
+          client.activate();
+        }
       } catch {
         if (!cancelled && activeTabRef.current !== "interaction") {
           setInteractionUnreadCount(0);
@@ -519,11 +545,11 @@ const StudentDashboard = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${
+            className={`inline-flex items-center justify-center px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${
               activeTab === tab ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <span className="relative inline-flex items-center gap-2 pr-3">
+            <span className="relative inline-flex items-center justify-center gap-2">
               {tab === "path"
                 ? "El Camino"
                 : tab === "ranking"
@@ -532,7 +558,7 @@ const StudentDashboard = () => {
                     ? "Interacción"
                     : "Mi Perfil"}
               {tab === "interaction" && activeTab !== "interaction" && interactionUnreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold leading-none flex items-center justify-center shadow-sm ring-2 ring-card" aria-label="Mensajes sin leer">
+                <span className="absolute -top-2 -right-4 min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold leading-none flex items-center justify-center shadow-sm ring-2 ring-card pointer-events-none" aria-label="Mensajes sin leer">
                   {formatUnreadCount(interactionUnreadCount)}
                 </span>
               )}

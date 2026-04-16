@@ -46,7 +46,7 @@ export const MobileBottomNav = ({
                   isActive && "scale-110"
                 )} />
                 {!isActive && item.id === "interaction" && interactionUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center border-2 border-card shadow-sm" aria-label="Mensajes sin leer">
+                  <span className="absolute -top-3 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center border-2 border-card shadow-sm pointer-events-none" aria-label="Mensajes sin leer">
                     {interactionUnreadCount > 99 ? '99+' : interactionUnreadCount}
                   </span>
                 )}
