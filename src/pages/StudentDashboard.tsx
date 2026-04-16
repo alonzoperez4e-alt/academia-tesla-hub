@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Construction, Loader2 } from "lucide-react";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 
 // Componentes UI
 import { GamifiedStatusBar } from "@/components/gamification/GamifiedStatusBar";
@@ -11,11 +13,50 @@ import { GroupInteraction } from "../components/student/GroupInteraction";
 import StudentDinoGif from "@/components/student/StudentDinoGif";
 import StudentProgressProfile from "@/components/student/StudentProgressProfile";
 import { QuizModal } from "@/components/student/QuizModal";
+import { groupService } from "@/services/groupService";
+import type { GroupChatMessage } from "@/types/api.types";
 
 // Hook
 import { useStudentDashboard } from "@/hooks/studentDashboard/useStudentDashboard";
 
 const studentTabs = ["path", "ranking", "interaction", "profile"] as const;
+const INTERACTION_LAST_SEEN_PREFIX = "student_interaction_last_seen";
+
+const stripTrailingSlash = (value: string) => value.replace(/\/$/, "");
+
+const resolveWsBaseUrl = () => {
+  const envWs = import.meta.env.VITE_WS_BASE_URL as string | undefined;
+  if (envWs) return stripTrailingSlash(envWs);
+
+  const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
+  if (apiBase) {
+    const cleaned = stripTrailingSlash(apiBase);
+    const withoutApi = cleaned.replace(/\/api\/(v1)?$/i, "");
+    return withoutApi || cleaned;
+  }
+
+  if (typeof window !== "undefined") return window.location.origin;
+  return "http://localhost:8080";
+};
+
+const getMessageTimestampMs = (message: GroupChatMessage) => {
+  const raw = message.timestamp ?? message.updatedAt ?? message.createdAt;
+  if (typeof raw === "number") return raw;
+  if (!raw) return 0;
+  const parsed = Date.parse(raw);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const getLatestMessageTimestampMs = (messages: GroupChatMessage[]) => {
+  return messages.reduce((latest, message) => Math.max(latest, getMessageTimestampMs(message)), 0);
+};
+
+const getUnreadMessageCount = (messages: GroupChatMessage[], lastSeenTimestamp: number) => {
+  if (!lastSeenTimestamp) return messages.length;
+  return messages.reduce((count, message) => count + (getMessageTimestampMs(message) > lastSeenTimestamp ? 1 : 0), 0);
+};
+
+const formatUnreadCount = (count: number) => (count > 99 ? '99+' : String(count));
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -31,7 +72,14 @@ const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState<typeof studentTabs[number]>(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [resumeLesson, setResumeLesson] = useState<any | null>(null);
+  const [interactionUnreadCount, setInteractionUnreadCount] = useState(0);
   const didCheckRef = useRef(false);
+  const interactionSocketRef = useRef<Client | null>(null);
+  const interactionLastSeenRef = useRef(0);
+  const interactionLatestTimestampRef = useRef(0);
+  const activeTabRef = useRef(activeTab);
+
+  const wsBaseUrl = useMemo(() => resolveWsBaseUrl(), []);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -64,6 +112,131 @@ const StudentDashboard = () => {
     window.addEventListener("popstate", handlePopstate);
     return () => window.removeEventListener("popstate", handlePopstate);
   }, []);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const storageKey = `${INTERACTION_LAST_SEEN_PREFIX}:${user.id}`;
+    const storedValue = Number(localStorage.getItem(storageKey) || 0);
+    interactionLastSeenRef.current = Number.isFinite(storedValue) && storedValue > 0 ? storedValue : 0;
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const storageKey = `${INTERACTION_LAST_SEEN_PREFIX}:${user.id}`;
+    let cancelled = false;
+    const cleanupSocket = () => {
+      interactionSocketRef.current?.deactivate();
+      interactionSocketRef.current = null;
+    };
+
+    const markAsRead = (latestTimestamp: number) => {
+      if (latestTimestamp > interactionLastSeenRef.current) {
+        interactionLastSeenRef.current = latestTimestamp;
+        localStorage.setItem(storageKey, String(latestTimestamp));
+      }
+      setInteractionUnreadCount(0);
+    };
+
+    const syncInteractionUnread = async () => {
+      try {
+        const studentGroup = await groupService.getStudentGroup(user.id);
+        if (cancelled) return;
+
+        if (!studentGroup) {
+          cleanupSocket();
+          interactionLatestTimestampRef.current = 0;
+          setInteractionUnreadCount(0);
+          return;
+        }
+
+        const history = await groupService.getChatHistory(studentGroup.id);
+        if (cancelled) return;
+
+        const latestTimestamp = getLatestMessageTimestampMs(history ?? []);
+        interactionLatestTimestampRef.current = latestTimestamp;
+        const unreadCount = getUnreadMessageCount(history ?? [], interactionLastSeenRef.current);
+
+        if (activeTabRef.current === "interaction") {
+          markAsRead(latestTimestamp);
+        } else {
+          setInteractionUnreadCount(unreadCount);
+        }
+
+        if (!wsBaseUrl) return;
+
+        cleanupSocket();
+        const socket = new SockJS(`${wsBaseUrl}/ws-chat`);
+        const client = new Client({
+          webSocketFactory: () => socket as any,
+          reconnectDelay: 5000,
+          onConnect: () => {
+            if (cancelled) return;
+            client.subscribe(`/topic/group/${studentGroup.id}`, (frame) => {
+              try {
+                const incoming = JSON.parse(frame.body) as GroupChatMessage;
+                const incomingTimestamp = getMessageTimestampMs(incoming);
+                if (incomingTimestamp > interactionLatestTimestampRef.current) {
+                  interactionLatestTimestampRef.current = incomingTimestamp;
+                }
+
+                if (activeTabRef.current === "interaction") {
+                  markAsRead(interactionLatestTimestampRef.current);
+                  return;
+                }
+
+                setInteractionUnreadCount((current) => Math.min(current + 1, 999));
+              } catch {
+                if (activeTabRef.current !== "interaction") {
+                  setInteractionUnreadCount((current) => Math.min(current + 1, 999));
+                }
+              }
+            });
+          },
+          onWebSocketClose: () => {
+            if (cancelled) return;
+            interactionSocketRef.current = null;
+          },
+          onStompError: () => {
+            if (cancelled) return;
+            interactionSocketRef.current = null;
+          },
+        });
+
+        interactionSocketRef.current = client;
+        client.activate();
+      } catch {
+        if (!cancelled && activeTabRef.current !== "interaction") {
+          setInteractionUnreadCount(0);
+        }
+      }
+    };
+
+    void syncInteractionUnread();
+    const interval = window.setInterval(syncInteractionUnread, 60000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      cleanupSocket();
+    };
+  }, [user?.id, wsBaseUrl]);
+
+  useEffect(() => {
+    if (activeTab !== "interaction" || !user?.id) return;
+
+    const storageKey = `${INTERACTION_LAST_SEEN_PREFIX}:${user.id}`;
+    const latestTimestamp = interactionLatestTimestampRef.current;
+    if (latestTimestamp > interactionLastSeenRef.current) {
+      interactionLastSeenRef.current = latestTimestamp;
+      localStorage.setItem(storageKey, String(latestTimestamp));
+    }
+    setInteractionUnreadCount(0);
+  }, [activeTab, user?.id]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -350,13 +523,20 @@ const StudentDashboard = () => {
               activeTab === tab ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            {tab === "path"
-              ? "El Camino"
-              : tab === "ranking"
-                ? "Ranking"
-                : tab === "interaction"
-                  ? "Interacción"
-                  : "Mi Perfil"}
+            <span className="relative inline-flex items-center gap-2 pr-3">
+              {tab === "path"
+                ? "El Camino"
+                : tab === "ranking"
+                  ? "Ranking"
+                  : tab === "interaction"
+                    ? "Interacción"
+                    : "Mi Perfil"}
+              {tab === "interaction" && activeTab !== "interaction" && interactionUnreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold leading-none flex items-center justify-center shadow-sm ring-2 ring-card" aria-label="Mensajes sin leer">
+                  {formatUnreadCount(interactionUnreadCount)}
+                </span>
+              )}
+            </span>
           </button>
         ))}
       </div>
@@ -365,7 +545,11 @@ const StudentDashboard = () => {
         {renderContent()}
       </main>
 
-      <MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <MobileBottomNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        interactionUnreadCount={activeTab !== "interaction" ? interactionUnreadCount : 0}
+      />
 
       {state.currentQuiz && (
         <QuizModal
