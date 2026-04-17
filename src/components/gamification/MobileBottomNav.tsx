@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface MobileBottomNavProps {
   activeTab: "path" | "ranking" | "interaction" | "profile";
   onTabChange: (tab: "path" | "ranking" | "interaction" | "profile") => void;
+  interactionUnreadCount?: number;
 }
 
 const navItems = [
@@ -15,7 +16,8 @@ const navItems = [
 
 export const MobileBottomNav = ({ 
   activeTab, 
-  onTabChange
+  onTabChange,
+  interactionUnreadCount = 0,
 }: MobileBottomNavProps) => {
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border safe-area-inset-bottom">
@@ -43,6 +45,11 @@ export const MobileBottomNav = ({
                   "w-6 h-6 transition-transform duration-200",
                   isActive && "scale-110"
                 )} />
+                {!isActive && item.id === "interaction" && interactionUnreadCount > 0 && (
+                  <span className="absolute -top-3 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center border-2 border-card shadow-sm pointer-events-none" aria-label="Mensajes sin leer">
+                    {interactionUnreadCount > 99 ? '99+' : interactionUnreadCount}
+                  </span>
+                )}
               </div>
               
               <span className={cn(

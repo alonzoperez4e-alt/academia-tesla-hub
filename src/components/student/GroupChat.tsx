@@ -63,7 +63,7 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
   const [connected, setConnected] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
   const stompRef = useRef<Client | null>(null);
-  const listEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const localIdCounterRef = useRef(0);
 
   const wsBaseUrl = useMemo(() => resolveWsBaseUrl(), []);
@@ -89,10 +89,6 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
 
     return deduped.sort((a, b) => getTimestampMs(a) - getTimestampMs(b));
   }, [messages]);
-
-  const scrollToBottom = () => {
-    requestAnimationFrame(() => listEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }));
-  };
 
   useEffect(() => {
     let isActive = true;
@@ -222,8 +218,13 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [orderedMessages.length]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    requestAnimationFrame(() => {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    });
+  }, [orderedMessages.length, historyLoading]);
 
   const safeStudentName = studentName?.trim() || 'Invitado';
 
@@ -296,7 +297,7 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
 
           <Separator />
 
-          <div className="h-80 overflow-y-auto rounded-lg border border-border bg-secondary/40 p-3 space-y-3" aria-label="Mensajes del grupo">
+          <div ref={messagesContainerRef} className="h-80 overflow-y-auto rounded-lg border border-border bg-secondary/40 p-3 space-y-3" aria-label="Mensajes del grupo">
             {historyLoading ? (
               <div className="flex items-center justify-center h-full text-muted-foreground gap-2">
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -327,7 +328,6 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
                   );
                 })
             )}
-            <div ref={listEndRef} />
           </div>
 
           <div className="flex flex-col gap-2">
