@@ -399,7 +399,7 @@ const StudentDashboard = () => {
   };
 
   const renderContent = () => {
-    if (state.loading.cursos) return <LoadingScreen text="Cargando cursos..." />;
+    if (state.loading.cursos) return <LoadingScreen text="Cargando cursos ..." />;
     if (!isCourseEnabled) return <BlockedScreen text="Este curso será habilitado por el administrador próximamente." />;
     if (state.loading.camino) return <LoadingScreen text="Cargando contenido del curso..." />;
 
