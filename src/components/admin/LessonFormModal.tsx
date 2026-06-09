@@ -234,8 +234,8 @@ export const LessonFormModal = ({ isOpen, onClose, weekId, weekNumber, onSave }:
           idLeccion: idLeccionCreated,
           textoPregunta: q.text,
           solucionTexto: q.solutionText,
-          solucionImagenUrl: "", // Sera proveido por cloudinary desde backend
-          preguntaImagenUrl: "", // Sera proveido por cloudinary desde backend
+          solucionImagenUrl: "", // Sera proveido por el backend
+          preguntaImagenUrl: "", // Sera proveido por el backend
           alternativas: q.options.map((opt, index) => ({
             texto: opt,
             isCorrecta: index === q.correctAnswer

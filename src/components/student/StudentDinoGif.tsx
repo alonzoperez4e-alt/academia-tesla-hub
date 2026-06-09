@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { DINO_STAGE_ASSET_PATHS, getAssetUrl } from "@/lib/utils";
 
 type DinoStage = "egg" | "cracking" | "hatching" | "grown";
 type DinoSize = "sm" | "md" | "lg";
@@ -54,10 +55,10 @@ const StudentDinoGif = ({
 
   const renderStage = () => {
     const stageToFile: Record<DinoStage, { src: string; label: string }> = {
-      egg: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771864271/egg1_poqxvi.mp4", label: "Mascota etapa huevo" },
-      cracking: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771864394/cracking1_js5lyl.mp4", label: "Mascota agrietándose" },
-      hatching: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1771883596/CreciendoSopi-Picsart-BackgroundRemover_zpt6i7.mp4", label: "Mascota naciendo" },
-      grown: { src: "https://res.cloudinary.com/djh8zsaii/video/upload/v1772465029/Postulante_bqmn0z.mp4", label: "Mascota completamente crecida" },
+      egg: { src: getAssetUrl(DINO_STAGE_ASSET_PATHS.egg), label: "Mascota etapa huevo" },
+      cracking: { src: getAssetUrl(DINO_STAGE_ASSET_PATHS.cracking), label: "Mascota agrietándose" },
+      hatching: { src: getAssetUrl(DINO_STAGE_ASSET_PATHS.hatching), label: "Mascota naciendo" },
+      grown: { src: getAssetUrl(DINO_STAGE_ASSET_PATHS.grown), label: "Mascota completamente crecida" },
     };
 
     const asset = stageToFile[stage];

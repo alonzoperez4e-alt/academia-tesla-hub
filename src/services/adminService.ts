@@ -1,6 +1,18 @@
 import { api } from './api';
 import type { SemanaDetalleDTO, LeccionDetalleDTO, Curso, CrearCursoDTO, CrearSemanaDTO, Semana, ViewSemanaDTO, ViewLeccionDTO, CrearLeccionDTO, Leccion, CrearPreguntaDTO, Pregunta } from '../types/api.types';
 
+type UploadFileResponse = {
+  url: string;
+};
+
+const uploadFileViaBackend = async (file: File): Promise<UploadFileResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await api.post<UploadFileResponse>('/admin/upload', formData);
+  return response.data;
+};
+
 export const adminService = {
   /**
    * POST /api/admin/cursos
@@ -38,6 +50,14 @@ export const adminService = {
       }
     });
     return response.data;
+  },
+
+  uploadQuestionImage: async (file: File): Promise<UploadFileResponse> => {
+    return uploadFileViaBackend(file);
+  },
+
+  uploadFile: async (file: File): Promise<UploadFileResponse> => {
+    return uploadFileViaBackend(file);
   },
 
   /**
