@@ -4,11 +4,12 @@ import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import logo from "@/elements/526536997_1332296692230643_53059892068269174_n.jpg";
+import { getAssetUrl } from "@/lib/utils";
 
 import { authSession } from "@/services/authSession";
 import { loginService } from "@/services/loginService";
+
+const logo = getAssetUrl("logo/logo-academia.jpg");
 
 const Login = () => {
   const navigate = useNavigate();
