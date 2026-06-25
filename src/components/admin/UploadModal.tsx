@@ -1,5 +1,5 @@
 import { Upload, X, FileText, CheckCircle } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,11 +16,12 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { adminService } from "@/services/adminService";
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (data: { name: string; course: string; week: string; file: File | null }) => void;
+  onUpload: (data: { name: string; course: string; week: string; file: File | null; fileUrl?: string }) => void;
 }
 
 const courses = [
@@ -35,11 +36,45 @@ const courses = [
 const weeks = Array.from({ length: 16 }, (_, i) => i + 1);
 
 export const UploadModal = ({ isOpen, onClose, onUpload }: UploadModalProps) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [course, setCourse] = useState("");
   const [week, setWeek] = useState("");
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const clearFileSelection = () => {
+    setFile(null);
+    setFileUrl(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const resetFileSelection = () => {
+    clearFileSelection();
+    setUploadError(null);
+  };
+
+  const uploadSelectedFile = async (selectedFile: File) => {
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const uploadedFile = await adminService.uploadFile(selectedFile);
+      setFileUrl(uploadedFile.url);
+    } catch (error) {
+      console.error("Error al subir el material:", error);
+      clearFileSelection();
+      setUploadError("No se pudo subir el archivo. Intenta nuevamente.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -56,26 +91,32 @@ export const UploadModal = ({ isOpen, onClose, onUpload }: UploadModalProps) => 
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
-      if (!name) setName(e.dataTransfer.files[0].name);
+      const selectedFile = e.dataTransfer.files[0];
+      setFile(selectedFile);
+      if (!name) setName(selectedFile.name);
+      void uploadSelectedFile(selectedFile);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      if (!name) setName(e.target.files[0].name);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      if (!name) setName(selectedFile.name);
+      void uploadSelectedFile(selectedFile);
     }
   };
 
   const handleSubmit = () => {
-    onUpload({ name, course, week, file });
+    if (isUploading) return;
+
+    onUpload({ name, course, week, file, fileUrl: fileUrl ?? undefined });
     resetForm();
     onClose();
   };
 
   const resetForm = () => {
-    setFile(null);
+    resetFileSelection();
     setName("");
     setCourse("");
     setWeek("");
@@ -113,10 +154,16 @@ export const UploadModal = ({ isOpen, onClose, onUpload }: UploadModalProps) => 
                 <p className="text-sm text-muted-foreground">
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
+                {isUploading && <p className="text-sm text-primary">Subiendo a S3...</p>}
+                {fileUrl && !isUploading && (
+                  <p className="text-xs text-muted-foreground break-all text-center max-w-md">
+                    URL CloudFront: {fileUrl}
+                  </p>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setFile(null)}
+                  onClick={() => resetFileSelection()}
                   className="text-destructive hover:text-destructive"
                 >
                   <X className="w-4 h-4 mr-1" />
@@ -135,6 +182,7 @@ export const UploadModal = ({ isOpen, onClose, onUpload }: UploadModalProps) => 
                 <input
                   type="file"
                   onChange={handleFileInput}
+                  ref={fileInputRef}
                   className="hidden"
                   id="file-upload"
                   accept=".pdf,.mp4,.mov,.avi"
@@ -147,6 +195,8 @@ export const UploadModal = ({ isOpen, onClose, onUpload }: UploadModalProps) => 
               </>
             )}
           </div>
+
+          {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
 
           {/* Form Fields */}
           <div className="space-y-4">
@@ -204,10 +254,10 @@ export const UploadModal = ({ isOpen, onClose, onUpload }: UploadModalProps) => 
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!file || !name || !course || !week}
+            disabled={!file || !name || !course || !week || isUploading || !fileUrl}
             className="btn-tesla-accent"
           >
-            <Upload className="w-4 h-4 mr-2" />
+            <Upload className={`w-4 h-4 mr-2 ${isUploading ? 'animate-pulse' : ''}`} />
             Subir Material
           </Button>
         </div>

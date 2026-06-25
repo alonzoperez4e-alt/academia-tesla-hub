@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Target, TrendingUp, Star, User, IdCard, GraduationCap, Zap, Flame, Lock } from 'lucide-react';
 import type { EstadoMascota } from '@/types/api.types';
+import { DINO_STAGE_ASSET_PATHS, getAssetUrl } from '@/lib/utils';
 
 interface StudentProgressProfileProps {
   userName: string;
@@ -50,10 +51,10 @@ const StudentProgressProfile = ({
   const resolvedPetState: EstadoMascota = petState ?? 'Huevo';
 
   const stageConfig: { key: EstadoMascota; mediaSrc: string; label: string; description: string }[] = [
-    { key: 'Huevo', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771864271/egg1_poqxvi.mp4', label: 'Inicio', description: '0-1249 EXP' },
-    { key: 'Agrietándose', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771864394/cracking1_js5lyl.mp4', label: 'Básico', description: '1250-2499 EXP' },
-    { key: 'Naciendo', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1771883596/CreciendoSopi-Picsart-BackgroundRemover_zpt6i7.mp4', label: 'Intermedio', description: '2500-3749 EXP' },
-    { key: 'Completamente Crecido', mediaSrc: 'https://res.cloudinary.com/djh8zsaii/video/upload/v1772465029/Postulante_bqmn0z.mp4', label: 'Postulante', description: '3750+ EXP' },
+    { key: 'Huevo', mediaSrc: getAssetUrl(DINO_STAGE_ASSET_PATHS.egg), label: 'Inicio', description: '0-1249 EXP' },
+    { key: 'Agrietándose', mediaSrc: getAssetUrl(DINO_STAGE_ASSET_PATHS.cracking), label: 'Básico', description: '1250-2499 EXP' },
+    { key: 'Naciendo', mediaSrc: getAssetUrl(DINO_STAGE_ASSET_PATHS.hatching), label: 'Intermedio', description: '2500-3749 EXP' },
+    { key: 'Completamente Crecido', mediaSrc: getAssetUrl(DINO_STAGE_ASSET_PATHS.grown), label: 'Postulante', description: '3750+ EXP' },
   ];
 
   const petStateDisplayLabel = stageConfig.find((stage) => stage.key === resolvedPetState)?.label ?? resolvedPetState;
