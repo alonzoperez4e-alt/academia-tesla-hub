@@ -54,14 +54,15 @@ const Login = () => {
           setError("Rol de usuario no reconocido");
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Login error:", err);
-      setError("Código de usuario o contraseña incorrectos");
+      // Aquí extraemos el error exacto que lanza Cognito
+      setError(err.message || "Código de usuario o contraseña incorrectos");
+    } finally {
+      // Apagamos el loading siempre, pase lo que pase
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
-
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Branding */}
