@@ -24,7 +24,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci # Usa 'npm install' si no tienes un package-lock.json actualizado
+        run: npm install # Usa 'npm install' si no tienes un package-lock.json actualizado
 
       - name: Build React App (Inyectando Variables de Entorno)
         run: npm run build
