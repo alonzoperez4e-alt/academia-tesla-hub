@@ -29,7 +29,9 @@ jobs:
       - name: Build React App (Inyectando Variables de Entorno)
         run: npm run build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }} # Parte B: Inyección en caliente de la API de producción
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_COGNITO_USER_POOL_ID: ${{ secrets.VITE_COGNITO_USER_POOL_ID }}
+          VITE_COGNITO_CLIENT_ID: ${{ secrets.VITE_COGNITO_CLIENT_ID }}
 
       - name: Configure AWS credentials (via OIDC)
         uses: aws-actions/configure-aws-credentials@v4
