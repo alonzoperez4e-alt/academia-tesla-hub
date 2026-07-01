@@ -1,0 +1,56 @@
+name: Deploy Frontend (React + Vite) to S3
+
+on:
+  push:
+    branches:
+      - develop # Se dispara automáticamente cuando mezclas a la rama principal
+
+permissions:
+  id-token: write # Requerido para autenticación OIDC con AWS
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-size: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci # Usa 'npm install' si no tienes un package-lock.json actualizado
+
+      - name: Build React App (Inyectando Variables de Entorno)
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }} # Parte B: Inyección en caliente de la API de producción
+
+      - name: Configure AWS credentials (via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # El rol OIDC que crearon en bootstrap
+          aws-region: us-east-1
+
+      - name: Deploy static assets to S3
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.AWS_S3_BUCKET_NAME }} \
+            --delete \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude "index.html"
+
+      - name: Deploy index.html (Sin caché para evitar congelamiento de versión)
+        run: |
+          aws s3 cp dist/index.html s3://${{ secrets.AWS_S3_BUCKET_NAME }}/index.html \
+            --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.AWS_CLOUDFRONT_DIST_ID }} \
+            --paths "/*"
