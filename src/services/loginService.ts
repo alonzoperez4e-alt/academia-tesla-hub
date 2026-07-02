@@ -55,6 +55,9 @@ export const loginService = {
       if (error.name === 'NotAuthorizedException' || error.name === 'UserNotFoundException') {
         throw new Error("Código de usuario o contraseña incorrectos");
       }
+      if (error.name === 'PasswordResetRequiredException') {
+        throw new Error("Debes restablecer tu contraseña.");
+      }
       throw new Error(error.message || "Error al iniciar sesión");
     }
   },
