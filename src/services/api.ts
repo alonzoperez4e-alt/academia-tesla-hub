@@ -1,24 +1,18 @@
 import axios from 'axios';
-import { authSession } from './authSession';
+import { authGateway } from '../contexts/AuthContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-api.interceptors.request.use((config) => {
-  const token = authSession.getAccessToken();
-  // Evitamos enviar el access token de autorización en rutas de login o refresh
-  if (token && !config.url?.includes('/auth/refresh') && !config.url?.includes('/auth/login')) {
-    if (!config.headers) {
-      config.headers = {} as any;
-    }
-    // Asegurar compatibilidad estricta con AxiosHeaders en Axios 1.x+
+api.interceptors.request.use(async (config) => {
+  const token = await authGateway.getAccessToken();
+  if (token) {
     if (typeof config.headers.set === 'function') {
       config.headers.set('Authorization', `Bearer ${token}`);
     } else {
@@ -29,9 +23,9 @@ api.interceptors.request.use((config) => {
 });
 
 let isRefreshing = false;
-let queue: Array<(token: string) => void> = [];
+let queue: Array<(token: string | null) => void> = [];
 
-const flushQueue = (token: string) => {
+const flushQueue = (token: string | null) => {
   queue.forEach((cb) => cb(token));
   queue = [];
 };
@@ -43,8 +37,7 @@ api.interceptors.response.use(
 
     if (
       (error.response?.status !== 401 && error.response?.status !== 403) ||
-      originalRequest?._retry ||
-      originalRequest?.url?.includes('/auth/refresh')
+      originalRequest?._retry
     ) {
       return Promise.reject(error);
     }
@@ -52,8 +45,12 @@ api.interceptors.response.use(
     originalRequest._retry = true;
 
     if (isRefreshing) {
-      return new Promise((resolve) => {
-        queue.push((newToken: string) => {
+      return new Promise((resolve, reject) => {
+        queue.push((newToken) => {
+          if (!newToken) {
+            reject(error);
+            return;
+          }
           if (typeof originalRequest.headers.set === 'function') {
             originalRequest.headers.set('Authorization', `Bearer ${newToken}`);
           } else {
@@ -66,21 +63,22 @@ api.interceptors.response.use(
 
     isRefreshing = true;
     try {
-      // Forzar explícitamente el uso de credenciales para mandar la cookie al backend en la petición y usar el cliente default.
-      const { data } = await api.post('/auth/refresh', {}, { withCredentials: true }); 
-      authSession.set(data.accessToken, data.role ?? authSession.getRole());
-      flushQueue(data.accessToken);
+      const newToken = await authGateway.getAccessToken(true);
+      if (!newToken) {
+        throw new Error('No se pudo refrescar la sesión de Cognito');
+      }
 
-      // Mutamos limpiamente utilizando AxiosHeaders (compatible con Axios >= 1.x)
+      flushQueue(newToken);
+
       if (typeof originalRequest.headers.set === 'function') {
-        originalRequest.headers.set('Authorization', `Bearer ${data.accessToken}`);
+        originalRequest.headers.set('Authorization', `Bearer ${newToken}`);
       } else {
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
       }
       return api(originalRequest);
     } catch (refreshError) {
-      authSession.clear();
-      window.location.href = '/login';
+      flushQueue(null);
+      await authGateway.clearAndRedirectToLogin();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

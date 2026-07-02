@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { adminService } from "@/services/adminService";
+import { storageService, PresignedUrlError, S3UploadError } from "@/services/storageService";
 
 interface QuestionDraft {
   id: string;
@@ -203,6 +204,18 @@ export const LessonFormModal = ({ isOpen, onClose, weekId, weekNumber, onSave }:
     setQuestions(questions.filter(q => q.id !== id));
   };
 
+  // Sube un archivo a S3 vía presigned URL y devuelve su publicUrl.
+  // Deja que PresignedUrlError/S3UploadError se propaguen al caller.
+  const uploadImage = async (file: File): Promise<string> => {
+    const { presignedUrl, publicUrl } = await storageService.getPresignedUrl(
+      "preguntas",
+      file.name,
+      file.type,
+    );
+    await storageService.uploadToS3(presignedUrl, file, file.type);
+    return publicUrl;
+  };
+
   const handleSaveLesson = async () => {
     // Paso 1: Validaciones previas
     if (!lessonName.trim()) {
@@ -214,40 +227,60 @@ export const LessonFormModal = ({ isOpen, onClose, weekId, weekNumber, onSave }:
       return;
     }
 
+    setIsSaving(true);
+
+    // Paso 2: Subir todas las imágenes a S3 ANTES de tocar el backend de lecciones/preguntas,
+    // para no dejar preguntas a medio guardar si una imagen falla tarde en el proceso.
+    let imageUrlsByQuestion: Map<string, { preguntaImagenUrl: string; solucionImagenUrl: string }>;
     try {
-      setIsSaving(true);
-      
-      // Paso 2: Crear Lección
+      imageUrlsByQuestion = new Map();
+      for (const q of questions) {
+        const preguntaImagenUrl = q.questionImageFile ? await uploadImage(q.questionImageFile) : "";
+        const solucionImagenUrl = q.solutionImageFile ? await uploadImage(q.solutionImageFile) : "";
+        imageUrlsByQuestion.set(q.id, { preguntaImagenUrl, solucionImagenUrl });
+      }
+    } catch (error) {
+      console.error("Error subiendo imágenes a S3:", error);
+      const description =
+        error instanceof PresignedUrlError
+          ? "No se pudo preparar la subida de la imagen. Intenta nuevamente."
+          : error instanceof S3UploadError
+            ? "No se pudo subir la imagen al almacenamiento. Verifica tu conexión e intenta nuevamente."
+            : "Ocurrió un error inesperado subiendo las imágenes.";
+      toast({ title: "Error al subir imagen", description, variant: "destructive" });
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      // Paso 3: Crear Lección
       const newLesson = await adminService.crearLeccion({
         idSemana: weekId,
         nombre: lessonName,
         descripcion: lessonDescription,
         orden: 1, // Por ahora enviamos 1, o se puede calcular si te lo da el endpoint de listarSemanas
       });
-      
-      // Paso 3: Extraer ID
+
+      // Paso 4: Extraer ID
       const idLeccionCreated = newLesson.idLeccion;
 
-      // Paso 4: Bucle de Preguntas
+      // Paso 5: Bucle de Preguntas, ya con las publicUrl reales de S3
       for (const q of questions) {
+        const { preguntaImagenUrl, solucionImagenUrl } = imageUrlsByQuestion.get(q.id)!;
+
         const preguntaDTO = {
           idLeccion: idLeccionCreated,
           textoPregunta: q.text,
           solucionTexto: q.solutionText,
-          solucionImagenUrl: "", // Sera proveido por el backend
-          preguntaImagenUrl: "", // Sera proveido por el backend
+          solucionImagenUrl,
+          preguntaImagenUrl,
           alternativas: q.options.map((opt, index) => ({
             texto: opt,
             isCorrecta: index === q.correctAnswer
           }))
         };
 
-        // Paso 5: Enviar Preguntas (FormData en adminService.crearPregunta)
-        await adminService.crearPregunta(
-          preguntaDTO, 
-          q.questionImageFile || undefined, 
-          q.solutionImageFile || undefined
-        );
+        await adminService.crearPregunta(preguntaDTO);
       }
 
       // Paso 6: Feedback
@@ -272,10 +305,13 @@ export const LessonFormModal = ({ isOpen, onClose, weekId, weekNumber, onSave }:
 
       resetForm();
     } catch (error: any) {
+      // Las imágenes ya se subieron a S3 en el Paso 2; si el guardado en backend falla aquí,
+      // esos objetos quedan huérfanos (no hay endpoint de borrado expuesto al frontend).
+      // Se le pide al admin reintentar la lección completa en vez de un reintento parcial.
       console.error("Error guardando lección completo:", error);
       toast({
         title: "Error de Servidor",
-        description: "Hubo un problema procesando la petición. Verifica tu consola.",
+        description: "Hubo un problema guardando la lección. Debes reintentar la lección completa.",
         variant: "destructive"
       });
     } finally {

@@ -32,23 +32,10 @@ export const adminService = {
     return response.data;
   },
 
-  crearPregunta: async (data: CrearPreguntaDTO, imagenPregunta?: File, imagenSolucion?: File): Promise<Pregunta> => {
-    const formData = new FormData();
-    formData.append('pregunta', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-    
-    if (imagenPregunta) {
-      formData.append('imagenPregunta', imagenPregunta);
-    }
-    
-    if (imagenSolucion) {
-      formData.append('imagenSolucion', imagenSolucion);
-    }
-
-    const response = await api.post<Pregunta>('/questions', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+  // Las imágenes ya se suben a S3 vía presigned URL antes de esta llamada
+  // (ver LessonFormModal.handleSaveLesson); aquí solo se envían sus publicUrl.
+  crearPregunta: async (data: CrearPreguntaDTO): Promise<Pregunta> => {
+    const response = await api.post<Pregunta>('/questions', data);
     return response.data;
   },
 

@@ -178,32 +178,6 @@ export type ContenidoLeccionResponse = CuestionarioDTO;
 /** POST /api/lecciones/{idLeccion}/finalizar */
 export type FinalizarLeccionResponse = ResultadoEvaluacionDTO;
 
-
-/** ========== LOGEO ========== */
-export interface AuthResponse {
-  accessToken: string;
-  role: string;
-  refreshToken?: string | null; // backend ahora puede no enviarlo en body
-  nombre?: string;
-  codigo?: string;
-  idUsuario?: number;
-}
-
-export interface LoginRequest{
-  codigo: string;
-  password: string;
-}
-
-export interface RegisterRequest{
-  codigo: string;
-  nombre: string;
-  apellido: string;
-  password: string;
-  role: string;
-  area: string;
-  tipoAlumno: string;
-}
-
 /** ========== Ranking ========== */
 
 export interface RankingItemDTO {
@@ -258,6 +232,13 @@ export interface AlternativaDetalleDTO {
   idAlternativa: number;
   texto: string;
   isCorrecta: boolean;
+}
+
+/** ========== Storage (Presigned URLs a S3) ========== */
+export interface PresignedUrlResponse {
+  presignedUrl: string;
+  fileKey: string;
+  publicUrl: string;
 }
 
 /** ========== Grupos (Interacción entre estudiantes) ========== */

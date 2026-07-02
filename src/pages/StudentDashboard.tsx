@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Construction, Loader2 } from "lucide-react";
 import { Client } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
+import { createAuthenticatedStompClient, resolveWsBaseUrl } from "@/services/chatSocket";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Componentes UI
 import { GamifiedStatusBar } from "@/components/gamification/GamifiedStatusBar";
@@ -21,23 +22,6 @@ import { useStudentDashboard } from "@/hooks/studentDashboard/useStudentDashboar
 
 const studentTabs = ["path", "ranking", "interaction", "profile"] as const;
 const INTERACTION_LAST_SEEN_PREFIX = "student_interaction_last_seen";
-
-const stripTrailingSlash = (value: string) => value.replace(/\/$/, "");
-
-const resolveWsBaseUrl = () => {
-  const envWs = import.meta.env.VITE_WS_BASE_URL as string | undefined;
-  if (envWs) return stripTrailingSlash(envWs);
-
-  const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
-  if (apiBase) {
-    const cleaned = stripTrailingSlash(apiBase);
-    const withoutApi = cleaned.replace(/\/api\/(v1)?$/i, "");
-    return withoutApi || cleaned;
-  }
-
-  if (typeof window !== "undefined") return window.location.origin;
-  return "http://localhost:8080";
-};
 
 const getMessageTimestampMs = (message: GroupChatMessage) => {
   const raw = message.timestamp ?? message.updatedAt ?? message.createdAt;
@@ -87,6 +71,7 @@ const StudentDashboard = () => {
   const activeTabRef = useRef(activeTab);
 
   const wsBaseUrl = useMemo(() => resolveWsBaseUrl(), []);
+  const { signOut } = useAuth();
 
   useEffect(() => {
     const userData = sessionStorage.getItem("currentUser");
@@ -188,13 +173,11 @@ const StudentDashboard = () => {
           cleanupSocket();
           interactionGroupIdRef.current = studentGroup.id;
 
-          const socket = new SockJS(`${wsBaseUrl}/ws-chat`);
-          const client = new Client({
-            webSocketFactory: () => socket as any,
-            reconnectDelay: 5000,
-            onConnect: () => {
+          const client = createAuthenticatedStompClient({
+            wsBaseUrl,
+            onConnect: (activeClient) => {
               if (cancelled) return;
-              client.subscribe(`/topic/group/${studentGroup.id}`, (frame) => {
+              activeClient.subscribe(`/topic/group/${studentGroup.id}`, (frame) => {
                 try {
                   const incoming = JSON.parse(frame.body) as GroupChatMessage;
                   const messageKey = getMessageKey(incoming);
@@ -222,11 +205,11 @@ const StudentDashboard = () => {
                 }
               });
             },
-            onWebSocketClose: () => {
+            onNetworkDrop: () => {
               if (cancelled) return;
               interactionSocketRef.current = null;
             },
-            onStompError: () => {
+            onAuthError: () => {
               if (cancelled) return;
               interactionSocketRef.current = null;
             },
@@ -393,9 +376,13 @@ const StudentDashboard = () => {
     if (curso) actions.setSelectedCursoId(curso.idCurso);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("currentUser");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("No se pudo cerrar la sesión correctamente:", error);
+      navigate("/login");
+    }
   };
 
   const renderContent = () => {

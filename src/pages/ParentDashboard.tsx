@@ -25,6 +25,7 @@ import {
   User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -120,6 +121,7 @@ const nodeTypeIcons = {
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<"progreso" | "camino">("progreso");
   const [user, setUser] = useState<UserData | null>(null);
   
@@ -176,9 +178,13 @@ const ParentDashboard = () => {
     setUser(parsedUser);
   }, [navigate]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("currentUser");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("No se pudo cerrar la sesión correctamente:", error);
+      navigate("/login");
+    }
   };
 
   if (!user) return null;

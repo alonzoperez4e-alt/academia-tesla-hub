@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import { Loader2, Send, Wifi, WifiOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { groupService } from '@/services/groupService';
 import type { GroupChatMessage } from '@/types/api.types';
 import { useToast } from '@/hooks/use-toast';
+import { createAuthenticatedStompClient, resolveWsBaseUrl } from '@/services/chatSocket';
 
 interface GroupChatProps {
   groupId: number | null | undefined;
@@ -18,23 +18,6 @@ interface GroupChatProps {
   studentName: string | null | undefined;
   resetSignal?: number;
 }
-
-const stripTrailingSlash = (value: string) => value.replace(/\/$/, '');
-
-const resolveWsBaseUrl = () => {
-  const envWs = import.meta.env.VITE_WS_BASE_URL as string | undefined;
-  if (envWs) return stripTrailingSlash(envWs);
-
-  const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '';
-  if (apiBase) {
-    const cleaned = stripTrailingSlash(apiBase);
-    const withoutApi = cleaned.replace(/\/api\/(v1)?$/i, '');
-    return withoutApi || cleaned;
-  }
-
-  if (typeof window !== 'undefined') return window.location.origin;
-  return 'http://localhost:8080';
-};
 
 const getDisplayTime = (message: GroupChatMessage) => {
   const raw = message.timestamp ?? message.updatedAt ?? message.createdAt;
@@ -126,16 +109,14 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
         return;
       }
 
-      const socket = new SockJS(`${wsBaseUrl}/ws-chat`);
-      const client = new Client({
-        webSocketFactory: () => socket as any,
-        reconnectDelay: 5000,
-        onConnect: () => {
+      const client = createAuthenticatedStompClient({
+        wsBaseUrl,
+        onConnect: (activeClient) => {
           if (!isActive) return;
           setConnecting(false);
           setConnected(true);
           const topic = `/topic/group/${groupId}`;
-          client.subscribe(topic, (frame) => {
+          activeClient.subscribe(topic, (frame) => {
             try {
               const incoming = withStableId(JSON.parse(frame.body) as GroupChatMessage);
               if (!isActive) return;
@@ -155,20 +136,21 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
           });
 
           // Suscripción a evento de eliminación del grupo
-          client.subscribe(`/topic/group/${groupId}/deleted`, () => {
+          activeClient.subscribe(`/topic/group/${groupId}/deleted`, () => {
             toast({ title: 'Este grupo ha sido eliminado', description: 'Serás redirigido al dashboard.', variant: 'destructive' });
             setMessages([]);
             navigate('/dashboard');
           });
         },
-        onStompError: () => {
+        onAuthError: () => {
           if (!isActive) return;
-          setConnectError('Hubo un problema con el canal de chat.');
+          setConnectError('Tu sesión expiró o no es válida. Vuelve a iniciar sesión para usar el chat.');
           setConnecting(false);
           setConnected(false);
         },
-        onWebSocketClose: () => {
+        onNetworkDrop: () => {
           if (!isActive) return;
+          setConnectError('Hubo un problema con el canal de chat.');
           setConnected(false);
         },
       });
