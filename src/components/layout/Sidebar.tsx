@@ -2,6 +2,7 @@ import { BookOpen, Calendar, FileText, Library, Users, Settings, LogOut, Zap, Me
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   role: "student" | "admin" | "parent";
@@ -41,10 +42,15 @@ export const Sidebar = ({ role, activeItem, onItemClick, userName, userCode, use
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("currentUser");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("No se pudo cerrar la sesión correctamente:", error);
+      navigate("/login");
+    }
   };
 
   const handleItemClick = (itemId: string, enabled: boolean) => {

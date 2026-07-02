@@ -1,64 +1,28 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 import logo from "@/elements/526536997_1332296692230643_53059892068269174_n.jpg";
 
-import { authSession } from "@/services/authSession";
-import { loginService } from "@/services/loginService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
-  const navigate = useNavigate();
-  const [userCode, setUserCode] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async () => {
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await loginService.LogearUsuario({
-        codigo: userCode,
-        password: password
-      });
-
-      if (response) {
-        const normalizedRole = (response.role ?? "").trim().toLowerCase();
-        const profile = authSession.getProfile();
-
-        const sessionUser = {
-          token: response.accessToken,
-          name: [profile.nombre, profile.apellido].filter(Boolean).join(" ").trim(),
-          role: normalizedRole,
-          code: profile.codigo || userCode,
-          id: profile.idUsuario ?? 0,
-        };
-
-        sessionStorage.setItem("currentUser", JSON.stringify(sessionUser));
-
-        if (normalizedRole === "alumno" || normalizedRole === "estudiante") {
-          navigate("/dashboard");
-        } else if (normalizedRole === "admin" || normalizedRole === "administrador") {
-          navigate("/admin");
-        } else if (normalizedRole === "padre" || normalizedRole === "apoderado") {
-          navigate("/padre");
-        } else {
-          setError("Rol de usuario no reconocido");
-        }
-      }
+      await signIn();
+      // signIn() triggers a full-page redirect to the Cognito Hosted UI;
+      // execution normally never reaches past this point.
     } catch (err) {
-      console.error("Login error:", err);
-      setError("Código de usuario o contraseña incorrectos");
+      console.error("No se pudo iniciar el flujo de inicio de sesión:", err);
+      setError("No se pudo iniciar sesión. Intenta nuevamente.");
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -102,7 +66,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+      {/* Right Side - Login */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md animate-slide-up">
           {/* Mobile Logo */}
@@ -118,87 +82,28 @@ const Login = () => {
               ¡Bienvenido de vuelta!
             </h2>
             <p className="text-muted-foreground">
-              Ingresa tu código de usuario para continuar
+              Inicia sesión con tu cuenta institucional para continuar
             </p>
           </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
-                {error}
-              </div>
+          {error && (
+            <div className="p-3 mb-6 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          <Button
+            type="button"
+            onClick={handleSignIn}
+            disabled={isLoading}
+            className="w-full h-12 btn-tesla-accent text-lg"
+          >
+            {isLoading ? (
+              <div className="w-6 h-6 border-2 border-accent-foreground border-t-transparent rounded-full animate-spin" />
+            ) : (
+              "Iniciar Sesión"
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="userCode">Código de Usuario</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="userCode"
-                  type="text"
-                  value={userCode}
-                  onChange={(e) => setUserCode(e.target.value)}
-                  placeholder="27427864"
-                  className="pl-10 input-tesla h-12"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10 input-tesla h-12"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-border text-primary focus:ring-primary" />
-                <span className="text-sm text-muted-foreground">Recordarme</span>
-              </label>
-              <button type="button" className="text-sm text-primary hover:underline">
-                ¿Olvidaste tu contraseña?
-              </button>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 btn-tesla-accent text-lg"
-            >
-              {isLoading ? (
-                <div className="w-6 h-6 border-2 border-accent-foreground border-t-transparent rounded-full animate-spin" />
-              ) : (
-                "Iniciar Sesión"
-              )}
-            </Button>
-          </form>
-
-          {/* Demo credentials */}
-          <div className="mt-6 p-4 bg-secondary rounded-lg">
-            <p className="text-xs text-muted-foreground text-center mb-2">Credenciales de prueba:</p>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Contraseña:</strong> 1234 </p>
-            </div>
-          </div>
+          </Button>
 
           <p className="text-center text-sm text-muted-foreground mt-8">
             ¿Necesitas ayuda?{" "}
