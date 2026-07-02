@@ -8,13 +8,20 @@ export const loginService = {
   LogearUsuario: async (credentials: LoginRequest): Promise<AuthResponse> => {
     try {
       // 1. Enviar credenciales a AWS Cognito
-      const { isSignedIn } = await signIn({
+      const signInOutput = await signIn({
         username: credentials.codigo,
         password: credentials.password,
       });
 
-      if (!isSignedIn) {
-        throw new Error("Inicio de sesión incompleto (requiere pasos adicionales).");
+      if (signInOutput.nextStep.signInStep !== 'DONE') {
+        const step = signInOutput.nextStep.signInStep;
+        console.warn("Estado de usuario en Cognito:", step);
+        
+        // Aquí detectamos si es el caso de cambio de contraseña obligatoria
+        if (step === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+            throw new Error("Debes establecer una nueva contraseña.");
+        }
+        throw new Error(`Se requiere acción adicional en Cognito: ${step}`);
       }
 
       // 2. Obtener la sesión y los tokens de AWS
