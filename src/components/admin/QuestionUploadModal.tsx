@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Plus, X, Upload, Image, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { adminService } from "@/services/adminService";
 
 interface Question {
   id: string;
@@ -34,22 +35,53 @@ interface QuestionUploadModalProps {
 }
 
 export const QuestionUploadModal = ({ isOpen, onClose, onSave }: QuestionUploadModalProps) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [questionText, setQuestionText] = useState("");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState<number | null>(null);
   const [week, setWeek] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const clearImageSelection = () => {
+    setImagePreview(null);
+    setImageUrl(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const resetImageSelection = () => {
+    clearImageSelection();
+    setUploadError(null);
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
+      setUploadError(null);
+      setIsUploadingImage(true);
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      try {
+        const uploadedImage = await adminService.uploadQuestionImage(file);
+        setImageUrl(uploadedImage.url);
+        setImagePreview(uploadedImage.url);
+      } catch (error) {
+        console.error("Error al subir la imagen de la pregunta:", error);
+        clearImageSelection();
+        setUploadError("No se pudo subir la imagen. Intenta nuevamente.");
+      } finally {
+        setIsUploadingImage(false);
+      }
     }
   };
 
@@ -61,13 +93,13 @@ export const QuestionUploadModal = ({ isOpen, onClose, onSave }: QuestionUploadM
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (correctAnswer === null) return;
+    if (correctAnswer === null || isUploadingImage) return;
     
     onSave({
       text: questionText,
       options,
       correctAnswer,
-      imageUrl: imagePreview || undefined,
+      imageUrl: imageUrl || undefined,
     });
     
     // Reset form
@@ -75,8 +107,7 @@ export const QuestionUploadModal = ({ isOpen, onClose, onSave }: QuestionUploadM
     setOptions(["", "", "", ""]);
     setCorrectAnswer(null);
     setWeek("");
-    setImageFile(null);
-    setImagePreview(null);
+    resetImageSelection();
     onClose();
   };
 
@@ -85,8 +116,7 @@ export const QuestionUploadModal = ({ isOpen, onClose, onSave }: QuestionUploadM
     setOptions(["", "", "", ""]);
     setCorrectAnswer(null);
     setWeek("");
-    setImageFile(null);
-    setImagePreview(null);
+    resetImageSelection();
     onClose();
   };
 
@@ -150,8 +180,7 @@ export const QuestionUploadModal = ({ isOpen, onClose, onSave }: QuestionUploadM
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
-                          setImageFile(null);
-                          setImagePreview(null);
+                          resetImageSelection();
                         }}
                         className="absolute top-2 right-2 p-1 bg-destructive rounded-full text-white"
                       >
@@ -162,6 +191,7 @@ export const QuestionUploadModal = ({ isOpen, onClose, onSave }: QuestionUploadM
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Image className="w-8 h-8" />
                       <span className="text-sm">Click para subir imagen</span>
+                      {isUploadingImage && <span className="text-xs text-primary">Subiendo a S3...</span>}
                     </div>
                   )}
                 </div>
@@ -169,10 +199,15 @@ export const QuestionUploadModal = ({ isOpen, onClose, onSave }: QuestionUploadM
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
+                  ref={fileInputRef}
                   className="hidden"
                 />
               </label>
             </div>
+            {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
+            {imageUrl && !isUploadingImage && (
+              <p className="text-xs text-muted-foreground break-all">URL CloudFront: {imageUrl}</p>
+            )}
           </div>
 
           {/* Answer Options */}
@@ -214,9 +249,13 @@ export const QuestionUploadModal = ({ isOpen, onClose, onSave }: QuestionUploadM
             <Button
               type="submit"
               className="flex-1 btn-tesla-accent"
-              disabled={!questionText || options.some((o) => !o) || correctAnswer === null || !week}
+              disabled={!questionText || options.some((o) => !o) || correctAnswer === null || !week || isUploadingImage}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              {isUploadingImage ? (
+                <Upload className="w-4 h-4 mr-2 animate-pulse" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
               Guardar Pregunta
             </Button>
           </div>
