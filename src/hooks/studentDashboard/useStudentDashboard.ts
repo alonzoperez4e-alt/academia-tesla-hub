@@ -4,6 +4,7 @@ import { estudianteService } from "@/services/estudianteService";
 import { statsService } from "@/services/statsService";
 import { rankingService } from "@/services/rankingService";
 import { mapSemanasToWeeks, mapCuestionarioToQuizQuestions, mapTrend } from "@/utils/studentDashboard/gamificationUtils";
+import { isUsuarioNoRegistradoError } from "@/utils/apiErrors";
 import type { Curso, CaminoCursoDTO, EstadisticasAlumnoDTO, RankingItemDTO, ResultadoEvaluacionDTO, EstadoMascota } from "@/types/api.types";
 import type { QuizQuestion } from "@/components/student/QuizModal";
 
@@ -14,7 +15,8 @@ export const useStudentDashboard = (user: any, activeTab: string) => {
   const [caminoPorCurso, setCaminoPorCurso] = useState<Record<number, CaminoCursoDTO>>({});
   const [studentStats, setStudentStats] = useState<EstadisticasAlumnoDTO | null>(null);
   const [rankingData, setRankingData] = useState<RankingItemDTO[]>([]);
-  
+  const [isUnregistered, setIsUnregistered] = useState(false);
+
   // Estados de carga
   const [isLoadingCursos, setIsLoadingCursos] = useState(true);
   const [isLoadingCamino, setIsLoadingCamino] = useState(false);
@@ -37,20 +39,25 @@ export const useStudentDashboard = (user: any, activeTab: string) => {
       setIsLoadingCursos(true);
       try {
         const resumenes = await estudianteService.obtenerCursos();
-        setCursos(resumenes);
+        const cursosArray = Array.isArray(resumenes) ? resumenes : [];
+        setCursos(cursosArray);
 
         const stored = localStorage.getItem("student_selected_course");
         const storedId = stored ? parseInt(stored, 10) : null;
-        const existsStored = storedId && resumenes.some((c) => c.idCurso === storedId && c.isHabilitado);
+        const existsStored = storedId && cursosArray.some((c) => c.idCurso === storedId && c.isHabilitado);
 
         if (existsStored) {
           setSelectedCursoId(storedId!);
         } else {
-          const primerHabilitado = resumenes.find((c) => c.isHabilitado);
+          const primerHabilitado = cursosArray.find((c) => c.isHabilitado);
           if (primerHabilitado) setSelectedCursoId(primerHabilitado.idCurso);
         }
       } catch (error) {
-        toast({ title: "Error", description: "No se pudieron cargar los cursos.", variant: "destructive" });
+        if (isUsuarioNoRegistradoError(error)) {
+          setIsUnregistered(true);
+        } else {
+          toast({ title: "Error", description: "No se pudieron cargar los cursos.", variant: "destructive" });
+        }
       } finally {
         setIsLoadingCursos(false);
       }
@@ -61,7 +68,11 @@ export const useStudentDashboard = (user: any, activeTab: string) => {
         const stats = await statsService.getStudentStats(user.id);
         setStudentStats(stats);
       } catch (error) {
-        toast({ title: "Error", description: "Error al cargar estadísticas.", variant: "destructive" });
+        if (isUsuarioNoRegistradoError(error)) {
+          setIsUnregistered(true);
+        } else {
+          toast({ title: "Error", description: "Error al cargar estadísticas.", variant: "destructive" });
+        }
       } finally {
         setIsLoadingStats(false);
       }
@@ -81,6 +92,10 @@ useEffect(() => {
     try {
       const data = await estudianteService.obtenerCaminoCurso(selectedCursoId, user.id);
       setCaminoPorCurso(prev => ({ ...prev, [selectedCursoId]: data }));
+    } catch (error) {
+      if (isUsuarioNoRegistradoError(error)) {
+        setIsUnregistered(true);
+      }
     } finally {
       setIsLoadingCamino(false);
     }
@@ -96,10 +111,14 @@ useEffect(() => {
       setIsLoadingRanking(true);
       try {
         const ranking = await rankingService.obtenerRanking(user.id);
-        setRankingData(ranking);
+        setRankingData(Array.isArray(ranking) ? ranking : []);
         rankingLoaded.current = true;
-      } catch {
-        toast({ title: "Error", description: "Error al cargar ranking.", variant: "destructive" });
+      } catch (error) {
+        if (isUsuarioNoRegistradoError(error)) {
+          setIsUnregistered(true);
+        } else {
+          toast({ title: "Error", description: "Error al cargar ranking.", variant: "destructive" });
+        }
       } finally {
         setIsLoadingRanking(false);
       }
@@ -243,6 +262,7 @@ useEffect(() => {
       weekSections,
       progressMetrics,
       rankingDerivedInfo,
+      isUnregistered,
       isQuizOpen,
       currentQuiz,
       loading: {
