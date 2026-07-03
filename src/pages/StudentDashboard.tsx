@@ -386,6 +386,14 @@ const StudentDashboard = () => {
   };
 
   const renderContent = () => {
+    if (state.isUnregistered) {
+      return (
+        <BlockedScreen
+          title="Cuenta no vinculada"
+          text="Tu cuenta aún no está registrada como alumno. Contacta al administrador para activar tu acceso."
+        />
+      );
+    }
     if (state.loading.cursos) return <LoadingScreen text="Cargando cursos ..." />;
     if (!isCourseEnabled) return <BlockedScreen text="Este curso será habilitado por el administrador próximamente." />;
     if (state.loading.camino) return <LoadingScreen text="Cargando contenido del curso..." />;
