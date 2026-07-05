@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { SemanaDetalleDTO, LeccionDetalleDTO, Curso, CrearCursoDTO, CrearSemanaDTO, Semana, ViewSemanaDTO, ViewLeccionDTO, CrearLeccionDTO, Leccion, CrearPreguntaDTO, Pregunta } from '../types/api.types';
+import type { SemanaDetalleDTO, LeccionDetalleDTO, Curso, CrearCursoDTO, CrearSemanaDTO, Semana, ViewSemanaDTO, ViewLeccionDTO, CrearLeccionDTO, Leccion, CrearPreguntaDTO, Pregunta, CrearUsuarioRequest, ReintentarCognitoRequest, UsuarioDTO } from '../types/api.types';
 
 type UploadFileResponse = {
   url: string;
@@ -69,6 +69,23 @@ eliminarLeccion: async (idLeccion: number): Promise<void> => {
 
 eliminarSemana: async (semanaId: number): Promise<void> => {
   await api.delete(`/weeks/${semanaId}`);
+},
+
+crearUsuario: async (data: CrearUsuarioRequest): Promise<UsuarioDTO> => {
+  const response = await api.post<UsuarioDTO>('/admin/usuarios', data);
+  return response.data;
+},
+
+listarUsuarios: async (soloPendientes = false): Promise<UsuarioDTO[]> => {
+  const response = await api.get<UsuarioDTO[]>('/admin/usuarios', {
+    params: soloPendientes ? { estado: 'pendiente' } : undefined,
+  });
+  return response.data;
+},
+
+reintentarCognito: async (idUsuario: number, data: ReintentarCognitoRequest): Promise<UsuarioDTO> => {
+  const response = await api.post<UsuarioDTO>(`/admin/usuarios/${idUsuario}/reintentar-cognito`, data);
+  return response.data;
 },
 
 };

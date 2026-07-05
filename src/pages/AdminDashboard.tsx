@@ -8,6 +8,7 @@ import { LessonFormModal } from "@/components/admin/LessonFormModal";
 import { WeekDetailsModal } from "@/components/admin/WeekDetailsModal";
 import { WeekFormModal } from "@/components/admin/WeekFormModal";
 import { GestionarRanking } from "@/components/admin/GestionarRanking";
+import { GestionarAlumnos } from "@/components/admin/GestionarAlumnos";
 import { Construction } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { estudianteService } from "@/services/estudianteService";
@@ -399,7 +400,8 @@ const AdminDashboard = () => {
         <main className="p-4 lg:p-6">
           {activeItem === "cuestionarios" && renderQuestionnaireManagement()}
           {activeItem === "ranking" && <GestionarRanking />}
-          {activeItem !== "cuestionarios" && activeItem !== "ranking" && renderComingSoon()}
+          {activeItem === "alumnos" && <GestionarAlumnos />}
+          {activeItem !== "cuestionarios" && activeItem !== "ranking" && activeItem !== "alumnos" && renderComingSoon()}
         </main>
       </div>
 
