@@ -15,7 +15,7 @@ const extractErrorMessage = (error: unknown) => {
 
 export const groupService = {
   async getStudentGroup(studentId: number): Promise<GroupInfo | null> {
-    const response = await api.get<GroupInfo>(`${GROUPS_BASE}/student/${studentId}`);
+    const response = await api.get<GroupInfo>(`${GROUPS_BASE}/student/me`);
     if (response.status === 204) return null;
     return response.data ?? null;
   },

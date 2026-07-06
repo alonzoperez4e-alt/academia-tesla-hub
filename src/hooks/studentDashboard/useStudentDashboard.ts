@@ -65,7 +65,7 @@ export const useStudentDashboard = (user: any, activeTab: string) => {
       // Stats
       setIsLoadingStats(true);
       try {
-        const stats = await statsService.getStudentStats(user.id);
+        const stats = await statsService.getStudentStats();
         setStudentStats(stats);
       } catch (error) {
         if (isUsuarioNoRegistradoError(error)) {
@@ -180,7 +180,7 @@ useEffect(() => {
       });
 
       // Recargar datos para actualizar la UI
-      const newStats = await statsService.getStudentStats(user.id);
+      const newStats = await statsService.getStudentStats();
       setStudentStats(newStats);
       rankingLoaded.current = false; // se recargará cuando el usuario abra la pestaña
 
