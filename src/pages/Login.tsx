@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-import logo from "@/elements/526536997_1332296692230643_53059892068269174_n.jpg";
+import { getAssetUrl } from "@/lib/utils";
 
 import { useAuth } from "@/contexts/AuthContext";
+
+const logo = getAssetUrl("logo/logo-academia.jpg");
 
 const Login = () => {
   const { signIn } = useAuth();

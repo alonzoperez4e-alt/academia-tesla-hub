@@ -23,7 +23,7 @@ const studentMenuItems = [
 const adminMenuItems = [
   { id: "cuestionarios", label: "Gestionar Cuestionarios", icon: ClipboardList, enabled: true },
   { id: "ranking", label: "Gestionar Ranking", icon: Trophy, enabled: true },
-  { id: "alumnos", label: "Gestionar Alumnos", icon: Users, enabled: false },
+  { id: "alumnos", label: "Gestionar Alumnos", icon: Users, enabled: true },
   { id: "configuracion", label: "Configuración", icon: Settings, enabled: false },
 ];
 

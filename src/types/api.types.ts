@@ -241,6 +241,39 @@ export interface PresignedUrlResponse {
   publicUrl: string;
 }
 
+/** ========== Usuarios (Admin: crear alumno/administrador) ========== */
+
+export type RolUsuario = "alumno" | "administrador" | "padre";
+
+export interface CrearUsuarioRequest {
+  codigoUsuario: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  password: string;
+  rol: "alumno" | "administrador";
+  area?: string;
+  tipoAlumno?: string;
+}
+
+export interface ReintentarCognitoRequest {
+  email: string;
+  password: string;
+}
+
+export interface UsuarioDTO {
+  idUsuario: number;
+  codigoUsuario: string;
+  nombre: string;
+  apellido: string;
+  rol: RolUsuario;
+  area?: string;
+  tipoAlumno?: string;
+  fechaRegistro: string;
+  cognitoSub: string | null;
+  pendienteCognito: boolean;
+}
+
 /** ========== Grupos (Interacción entre estudiantes) ========== */
 export interface GroupInfo {
   id: number;
