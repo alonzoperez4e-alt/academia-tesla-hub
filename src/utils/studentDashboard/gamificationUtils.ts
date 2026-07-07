@@ -39,6 +39,7 @@ export function mapCuestionarioToQuizQuestions(cuestionario: CuestionarioDTO): Q
   return cuestionario.preguntas.map((pregunta) => ({
     id: String(pregunta.idPregunta),
     text: pregunta.textoPregunta,
+    imageUrl: pregunta.preguntaImagenUrl ?? undefined,
     options: pregunta.alternativas.map((alt) => alt.texto),
     alternativaIds: pregunta.alternativas.map((alt) => alt.idAlternativa),
   }));
