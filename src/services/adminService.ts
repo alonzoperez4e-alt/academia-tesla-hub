@@ -33,7 +33,7 @@ export const adminService = {
   },
 
   // Las imágenes ya se suben a S3 vía presigned URL antes de esta llamada
-  // (ver LessonFormModal.handleSaveLesson); aquí solo se envían sus publicUrl.
+  // (ver LessonFormModal.handleSaveLesson); aquí solo se envían sus Object Key.
   crearPregunta: async (data: CrearPreguntaDTO): Promise<Pregunta> => {
     const response = await api.post<Pregunta>('/questions', data);
     return response.data;

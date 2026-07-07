@@ -204,16 +204,16 @@ export const LessonFormModal = ({ isOpen, onClose, weekId, weekNumber, onSave }:
     setQuestions(questions.filter(q => q.id !== id));
   };
 
-  // Sube un archivo a S3 vía presigned URL y devuelve su publicUrl.
+  // Sube un archivo a S3 vía presigned URL y devuelve su Object Key.
   // Deja que PresignedUrlError/S3UploadError se propaguen al caller.
   const uploadImage = async (file: File): Promise<string> => {
-    const { presignedUrl, publicUrl } = await storageService.getPresignedUrl(
+    const { presignedUrl, fileKey } = await storageService.getPresignedUrl(
       "preguntas",
       file.name,
       file.type,
     );
     await storageService.uploadToS3(presignedUrl, file, file.type);
-    return publicUrl;
+    return fileKey;
   };
 
   const handleSaveLesson = async () => {
@@ -231,13 +231,13 @@ export const LessonFormModal = ({ isOpen, onClose, weekId, weekNumber, onSave }:
 
     // Paso 2: Subir todas las imágenes a S3 ANTES de tocar el backend de lecciones/preguntas,
     // para no dejar preguntas a medio guardar si una imagen falla tarde en el proceso.
-    let imageUrlsByQuestion: Map<string, { preguntaImagenUrl: string; solucionImagenUrl: string }>;
+    let imageKeysByQuestion: Map<string, { preguntaImagenKey: string; solucionImagenKey: string }>;
     try {
-      imageUrlsByQuestion = new Map();
+      imageKeysByQuestion = new Map();
       for (const q of questions) {
-        const preguntaImagenUrl = q.questionImageFile ? await uploadImage(q.questionImageFile) : "";
-        const solucionImagenUrl = q.solutionImageFile ? await uploadImage(q.solutionImageFile) : "";
-        imageUrlsByQuestion.set(q.id, { preguntaImagenUrl, solucionImagenUrl });
+        const preguntaImagenKey = q.questionImageFile ? await uploadImage(q.questionImageFile) : "";
+        const solucionImagenKey = q.solutionImageFile ? await uploadImage(q.solutionImageFile) : "";
+        imageKeysByQuestion.set(q.id, { preguntaImagenKey, solucionImagenKey });
       }
     } catch (error) {
       console.error("Error subiendo imágenes a S3:", error);
@@ -264,16 +264,16 @@ export const LessonFormModal = ({ isOpen, onClose, weekId, weekNumber, onSave }:
       // Paso 4: Extraer ID
       const idLeccionCreated = newLesson.idLeccion;
 
-      // Paso 5: Bucle de Preguntas, ya con las publicUrl reales de S3
+      // Paso 5: Bucle de Preguntas, ya con las Object Keys reales de S3
       for (const q of questions) {
-        const { preguntaImagenUrl, solucionImagenUrl } = imageUrlsByQuestion.get(q.id)!;
+        const { preguntaImagenKey, solucionImagenKey } = imageKeysByQuestion.get(q.id)!;
 
         const preguntaDTO = {
           idLeccion: idLeccionCreated,
           textoPregunta: q.text,
           solucionTexto: q.solutionText,
-          solucionImagenUrl,
-          preguntaImagenUrl,
+          solucionImagenKey,
+          preguntaImagenKey,
           alternativas: q.options.map((opt, index) => ({
             texto: opt,
             isCorrecta: index === q.correctAnswer

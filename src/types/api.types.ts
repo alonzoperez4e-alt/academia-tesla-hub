@@ -103,9 +103,9 @@ export interface CrearAlternativaDTO {
 export interface CrearPreguntaDTO {
   idLeccion: number;
   textoPregunta: string;
-  preguntaImagenUrl?: string;
+  preguntaImagenKey?: string;
   solucionTexto: string;
-  solucionImagenUrl: string;
+  solucionImagenKey: string;
   alternativas: CrearAlternativaDTO[];
 }
 
@@ -141,9 +141,9 @@ export interface Pregunta {
   /** Swagger lo muestra como "string" (posible referencia/DTO simplificado). */
   leccion: string;
   textoPregunta: string;
-  preguntaImagenUrl?: string;
+  preguntaImagenKey?: string;
   solucionTexto: string;
-  solucionImagenUrl: string;
+  solucionImagenKey: string;
   alternativas: Alternativa[];
 }
 
@@ -238,7 +238,6 @@ export interface AlternativaDetalleDTO {
 export interface PresignedUrlResponse {
   presignedUrl: string;
   fileKey: string;
-  publicUrl: string;
 }
 
 /** ========== Usuarios (Admin: crear alumno/administrador) ========== */
