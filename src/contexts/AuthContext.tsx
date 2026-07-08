@@ -1,9 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { fetchAuthSession, signInWithRedirect, signOut as amplifySignOut } from 'aws-amplify/auth';
 import { Hub } from 'aws-amplify/utils';
+import { userService } from '@/services/userService';
 
 export interface AuthProfile {
-  idUsuario: string | null;
+  // sub de Cognito (UUID). No es el id_usuario numerico del backend — para eso usar `idUsuario`.
+  cognitoSub: string | null;
+  // id_usuario numerico real (tabla `usuario`), resuelto via GET /users/me. null hasta que
+  // resuelve o si el usuario de Cognito aun no esta vinculado a una cuenta en el backend.
+  idUsuario: number | null;
   nombre: string | null;
   apellido: string | null;
   codigo: string | null;
@@ -21,6 +26,7 @@ interface AuthContextValue {
 }
 
 const EMPTY_PROFILE: AuthProfile = {
+  cognitoSub: null,
   idUsuario: null,
   nombre: null,
   apellido: null,
@@ -48,7 +54,8 @@ function extractProfile(idTokenPayload: Record<string, unknown> | undefined): Au
   if (!idTokenPayload) return EMPTY_PROFILE;
 
   return {
-    idUsuario: typeof idTokenPayload.sub === 'string' ? idTokenPayload.sub : null,
+    cognitoSub: typeof idTokenPayload.sub === 'string' ? idTokenPayload.sub : null,
+    idUsuario: null,
     nombre:
       typeof idTokenPayload.given_name === 'string'
         ? idTokenPayload.given_name
@@ -137,6 +144,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const nextRole = extractRole(accessPayload);
       const nextProfile = extractProfile(idPayload);
+
+      // Resuelve el id_usuario numerico real del backend. Se espera aqui (no fire-and-forget)
+      // para que quede listo en sessionStorage antes de que los dashboards lo lean. Si falla
+      // (p.ej. el usuario de Cognito aun no esta vinculado en la tabla `usuario`) se degrada a
+      // null sin bloquear el login, igual que ya hace authGateway.getAccessToken.
+      try {
+        const usuario = await userService.getMe();
+        nextProfile.idUsuario = usuario.idUsuario;
+      } catch (error) {
+        console.error('No se pudo resolver el id_usuario del backend:', error);
+        nextProfile.idUsuario = null;
+      }
 
       setAccessToken(token);
       setRole(nextRole);
