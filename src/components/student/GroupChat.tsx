@@ -141,6 +141,17 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
             setMessages([]);
             navigate('/dashboard');
           });
+
+          // Errores de envío que el backend no pudo resolver (p. ej. fallo al guardar o reenviar el mensaje)
+          activeClient.subscribe('/user/queue/errors', (frame) => {
+            if (!isActive) return;
+            try {
+              const payload = JSON.parse(frame.body) as { error?: string };
+              toast({ title: 'No se pudo enviar el mensaje', description: payload.error ?? 'Inténtalo de nuevo.', variant: 'destructive' });
+            } catch (error) {
+              toast({ title: 'No se pudo enviar el mensaje', description: 'Inténtalo de nuevo.', variant: 'destructive' });
+            }
+          });
         },
         onAuthError: () => {
           if (!isActive) return;
@@ -222,7 +233,7 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
       stompRef.current.publish({
         destination: `/app/chat/${groupId}/sendMessage`,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ studentId, studentName: safeStudentName, content: trimmed }),
+        body: JSON.stringify({ content: trimmed }),
       });
       setInputValue('');
     } catch (error) {
@@ -294,7 +305,11 @@ export const GroupChat = ({ groupId, groupName, studentId, studentName, resetSig
                 .filter((message) => !!normalizeId(message.id))
                 .map((message) => {
                   const stableId = normalizeId(message.id)!;
-                  const isMine = message.studentId === studentId;
+                  // studentId del front no es el id numérico real del backend (ver AuthContext:
+                  // profile.idUsuario guarda el "sub" de Cognito), por lo que el backend nunca
+                  // devolverá un match por id. Se compara por nombre, igual que el fallback
+                  // que ya usa GroupInteraction para "isCurrentUser".
+                  const isMine = message.studentName === safeStudentName;
                   const time = getDisplayTime(message);
 
                   return (
